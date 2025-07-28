@@ -5,11 +5,19 @@ USE financial_db;
 # stock information
 CREATE TABLE stock_info (
     stock_id INT PRIMARY KEY AUTO_INCREMENT,
-    ticker_symbol VARCHAR(10) NOT NULL UNIQUE,
-    company_name VARCHAR(255) NOT NULL,
-    market VARCHAR(50), -- e.g., NASDAQ, NYSE
-    sector VARCHAR(100),
-    industry VARCHAR(100),
+    ticker_symbol VARCHAR(10) NOT NULL UNIQUE,       -- "symbol": "AAPL"
+    company_name VARCHAR(255) NOT NULL,              -- "longName": "Apple Inc."
+    exchange_name VARCHAR(100),                      -- "fullExchangeName": "NasdaqGS"
+    market_cap BIGINT,                               -- "marketCap"
+    currency VARCHAR(10),                            -- "currency": "USD"
+    regular_market_price DECIMAL(10,2),              -- "regularMarketPrice"
+    regular_market_change_percent DECIMAL(6,4),      -- "regularMarketChangePercent"
+    dividend_rate DECIMAL(6,2),                      -- "dividendRate"
+    trailing_pe DECIMAL(10,4),                       -- "trailingPE"
+    eps_ttm DECIMAL(10,4),                           -- "epsTrailingTwelveMonths"
+    price_to_book DECIMAL(10,4),                     -- "priceToBook"
+    fifty_two_week_high DECIMAL(10,2),               -- "fiftyTwoWeekHigh"
+    fifty_two_week_low DECIMAL(10,2),                -- "fiftyTwoWeekLow"
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -18,14 +26,15 @@ CREATE TABLE stock_hist (
     hist_id INT PRIMARY KEY AUTO_INCREMENT,
     stock_id INT NOT NULL,
     price_date DATE NOT NULL,
-    open_price DECIMAL(10,2),
-    close_price DECIMAL(10,2),
-    high_price DECIMAL(10,2),
-    low_price DECIMAL(10,2),
-    volume BIGINT,
+    open_price DECIMAL(12,9),
+    close_price DECIMAL(12,9),
+    high_price DECIMAL(12,9),
+    low_price DECIMAL(12,9),
+    volume BIGINT DEFAULT 0,
     FOREIGN KEY (stock_id) REFERENCES stock_info(stock_id),
     UNIQUE (stock_id, price_date)
 );
+
 
 # bonds information
 CREATE TABLE bonds_info (
