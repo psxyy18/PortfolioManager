@@ -3,11 +3,6 @@ INSERT INTO user_info (user_name, user_contact, cash_balance) VALUES
 ('Bob Johnson', 'bob@example.com', 15000.00),
 ('Carol Lee', 'carol@example.com', 12000.00);
 
-INSERT INTO stock_info (ticker_symbol, company_name, market, sector, industry) VALUES
-('AAPL', 'Apple Inc.', 'NASDAQ', 'Technology', 'Consumer Electronics'),
-('GOOGL', 'Alphabet Inc.', 'NASDAQ', 'Technology', 'Internet Services'),
-('TSLA', 'Tesla Inc.', 'NASDAQ', 'Consumer Discretionary', 'Automotive');
-
 INSERT INTO bonds_info (bond_name, issuer, maturity_date, coupon_rate, face_value, market) VALUES
 ('US Treasury 10Y', 'US Government', '2033-01-01', 1.5, 1000.00, 'NYSE'),
 ('Corporate Bond A', 'Corp A', '2028-06-30', 2.5, 1000.00, 'NYSE');
