@@ -1,0 +1,23 @@
+{
+  "name": "portfoliomanager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/psxyy18/PortfolioManager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/psxyy18/PortfolioManager/issues"
+  },
+  "homepage": "https://github.com/psxyy18/PortfolioManager#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
