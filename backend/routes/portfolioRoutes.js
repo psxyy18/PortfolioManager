@@ -6,5 +6,7 @@ const portfolioController = require('../controllers/portfolioController');
 router.get('/', portfolioController.getPortfolio);
 router.post('/', portfolioController.addItem);
 router.delete('/:id', portfolioController.deleteItem);
+router.post('/deposit', portfolioController.deposit);
+router.post('/withdraw', portfolioController.withdraw);
 
 module.exports = router;

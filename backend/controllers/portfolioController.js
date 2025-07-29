@@ -343,6 +343,70 @@ exports.getPortfolioDetails = async (req, res) => {
   }
 };
 
+exports.deposit = async (req, res) => {//存款功能
+  const { amount } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // 直接更新余额
+    await db.query(
+      `UPDATE user_info 
+       SET cash_balance = cash_balance + ?
+       WHERE user_id = ?`,
+      [amount, userId]
+    );
+
+    // 获取更新后的余额
+    const [[user]] = await db.query(
+      `SELECT cash_balance FROM user_info WHERE user_id = ?`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      newBalance: user.cash_balance
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Deposit failed'
+    });
+  }
+};
+
+exports.withdraw = async (req, res) => {//取款方法
+  const { amount } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // 直接扣减余额
+    await db.query(
+      `UPDATE user_info 
+       SET cash_balance = cash_balance - ?
+       WHERE user_id = ?`,
+      [amount, userId]
+    );
+
+    // 获取更新后的余额
+    const [[user]] = await db.query(
+      `SELECT cash_balance FROM user_info WHERE user_id = ?`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      newBalance: user.cash_balance
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Withdrawal failed'
+    });
+  }
+};
+
 // 辅助函数：获取当前现金余额
 async function getCurrentCashBalance(userId) {
   const [[user]] = await db.query(
