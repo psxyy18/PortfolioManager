@@ -3,8 +3,9 @@ import { NextAppProvider } from '@toolpad/core/nextjs';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import type { Navigation } from '@toolpad/core/AppProvider';
+import type { Navigation, Branding } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import theme from '../theme';
 import { auth } from '../auth';
@@ -19,15 +20,20 @@ const NAVIGATION: Navigation = [
     icon: <DashboardIcon />,
   },
   {
-    segment: 'detail',
-    title: 'Detail',
-    icon: <AssessmentIcon />,
+    segment: 'details',
+    title: 'Market Details',
+    icon: <TrendingUpIcon />,
   },
 ];
 
 const AUTHENTICATION = {
   signIn,
   signOut,
+};
+
+const BRANDING: Branding = {
+  logo: <AttachMoneyIcon />,
+  title: 'Portfolio Manager',
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -40,6 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <NextAppProvider
               theme={theme}
               navigation={NAVIGATION}
+              branding={BRANDING}
               session={session}
               authentication={AUTHENTICATION}
             >
