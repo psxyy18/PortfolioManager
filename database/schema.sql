@@ -12,6 +12,7 @@ CREATE TABLE stock_info (
     exchange VARCHAR(50),                        -- "exchange": "NMS"
     industry VARCHAR(100),                       -- "industry": "Consumer Electronics"
     sector VARCHAR(100),                         -- "sector": "Technology"
+    market_cap DECIMAL(20,2) DEFAULT 0.00, -- "marketCap": 2.5e+12
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (ticker_symbol)
 );
