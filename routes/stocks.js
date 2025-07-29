@@ -35,8 +35,8 @@ async function getTopNTickersByIndustry(industry, n) {
 
 // Get all stocks
 router.get('/', async (req, res) => {
-  const [rows] = await pool.query('SELECT * FROM stock_info');
-  res.json(rows);
+    const [rows] = await pool.query('SELECT * FROM stock_info');
+    res.json(rows);
 });
 
 
@@ -69,23 +69,24 @@ router.get('/top-tickers', async (req, res) => {
     }
 });
 
+// Get the data for a specific ticker
 router.get('/quote', async (req, res) => {
-  const ticker = req.query.ticker;
-  if (!ticker) return res.status(400).json({ error: 'Missing ticker' });
+    const ticker = req.query.ticker;
+    if (!ticker) return res.status(400).json({ error: 'Missing ticker' });
 
-  try {
-    const quote = await yahooFinance.quote(ticker);
-    res.json({
-      symbol: quote.symbol,
-      name: quote.shortName,
-      regularMarketPrice: quote.regularMarketPrice,
-      regularMarketChange: quote.regularMarketChange,
-      regularMarketChangePercent: quote.regularMarketChangePercent,
-    });
-  } catch (err) {
-    console.error(`Error fetching quote for ${ticker}:`, err);
-    res.status(500).json({ error: 'Failed to fetch quote' });
-  }
+    try {
+        const quote = await yahooFinance.quote(ticker);
+        res.json({
+            symbol: quote.symbol,
+            name: quote.shortName,
+            regularMarketPrice: quote.regularMarketPrice,
+            regularMarketChange: quote.regularMarketChange,
+            regularMarketChangePercent: quote.regularMarketChangePercent,
+        });
+    } catch (err) {
+        console.error(`Error fetching quote for ${ticker}:`, err);
+        res.status(500).json({ error: 'Failed to fetch quote' });
+    }
 });
 
 export default router;
