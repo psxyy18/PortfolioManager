@@ -1,2 +1,6 @@
 node_modules/
 .env
+companies.csv
+stock_data.csv
+.DS_Store
+test.js
