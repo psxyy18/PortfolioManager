@@ -1,4 +1,4 @@
-// Indexes Used in the Tab2 Page
+// Indexes Used in the stocks Page
 const indices = [
   { name: "SSE Composite", ticker: "000001.SS" },
   { name: "S&P 500", ticker: "^GSPC" },
@@ -7,7 +7,8 @@ const indices = [
 ];
 
 async function fetchQuote(ticker) {
-  const res = await fetch(`/api/stocks/quote?ticker=${ticker}`);
+  // Use your backend API for current stock status
+  const res = await fetch(`http://localhost:3001/api/stock/${encodeURIComponent(ticker)}/current`);
   return await res.json();
 }
 
@@ -20,21 +21,23 @@ function getChangeDisplay(change, percent) {
 
 async function loadIndices() {
   const container = document.getElementById("indices");
+  container.innerHTML = '';
   for (const idx of indices) {
     const data = await fetchQuote(idx.ticker);
     const box = document.createElement("div");
     box.className = "index-box";
     box.innerHTML = `
       <h3>${idx.name}</h3>
-      <p><strong>${data.regularMarketPrice}</strong></p>
-      <p>${getChangeDisplay(data.regularMarketChange, data.regularMarketChangePercent)}</p>
+      <p><strong>${data.regularMarketPrice ?? '--'}</strong></p>
+      <p>${getChangeDisplay(data.regularMarketChange ?? 0, data.regularMarketChangePercent ?? 0)}</p>
     `;
     container.appendChild(box);
   }
 }
 
 async function loadTopTickers(industry, n = 10) {
-  const res = await fetch(`/api/stocks/top-tickers?industry=${encodeURIComponent(industry)}&n=${n}`);
+  // Use your backend API for top tickers by industry
+  const res = await fetch(`http://localhost:3001/api/stock/top-stocks?industry=${encodeURIComponent(industry)}&n=${n}`);
   const companies = await res.json();
   const tbody = document.getElementById("company-table");
   tbody.innerHTML = ''; // Clear existing rows
@@ -52,5 +55,6 @@ async function loadTopTickers(industry, n = 10) {
   });
 }
 
+// Initial load
 loadIndices();
-loadTopTickers("All", 10);
+loadTopTickers("All", 10); 

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #f4f6fb;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 24px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    nav a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1em;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+    nav a.active, nav a:hover {
+      background: #2563eb;
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      color: #2d3a4b;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+    }
+    .section {
+      margin-bottom: 2.5em;
+      padding: 24px;
+      border-radius: 12px;
+      background: #f9fafc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .section h2 {
+      color: #3b4a5a;
+      margin-top: 0;
+      font-size: 1.3em;
+      font-weight: 700;
+    }
+    ul {
+      padding-left: 20px;
+      margin: 0 0 10px 0;
+    }
+    li {
+      margin-bottom: 4px;
+      color: #2d3a4b;
+    }
+    #portfolio strong {
+      color: #1a7f5a;
+    }
+    #portfolio {
+      font-size: 1.1em;
+    }
+    form {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    input {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1em;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border: 1.5px solid #4f8cff;
+    }
+    button {
+      background: linear-gradient(90deg, #4f8cff 60%, #1a7f5a 100%);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 22px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(79,140,255,0.08);
+    }
+    button:hover {
+      background: linear-gradient(90deg, #1a7f5a 60%, #4f8cff 100%);
+      box-shadow: 0 4px 16px rgba(26,127,90,0.10);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px;
+    }
+    th {
+      background-color: #111827;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    #message {
+      color: #e74c3c;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+    #portfolio-loading, #chart-loading {
+      color: #888;
+      font-size: 1em;
+      margin: 10px 0;
+    }
+    #performanceChart {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(44,62,80,0.07);
+      margin-top: 16px;
+      padding: 8px;
+    }
+    @media (max-width: 700px) {
+      .container { padding: 8px; }
+      .section { padding: 10px; }
+      #performanceChart { width: 100% !important; height: 200px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="index.html" class="active">Portfolio</a>
+      <a href="stock.html">Market Dashboard</a>
+    </nav>
+    <h1>Portfolio Manager</h1>
+    <div class="section" id="portfolio-section">
+      <h2>Portfolio</h2>
+      <div id="portfolio-loading">Loading...</div>
+      <div id="portfolio"></div>
+    </div>
+    <div class="section">
+      <h2>Buy Stock</h2>
+      <form id="buy-stock-form">
+        <input id="ticker" placeholder="Ticker Symbol" required />
+        <input id="price" placeholder="Price" type="number" step="0.01" required />
+        <input id="shares" placeholder="Number of Shares" type="number" required />
+        <button type="submit">Buy</button>
+      </form>
+      <div id="message"></div>
+    </div>
+    <div class="section">
+      <h2>Portfolio Performance</h2>
+      <canvas id="performanceChart" width="700" height="300"></canvas>
+      <div id="chart-loading">Loading chart...</div>
+    </div>
+  </div>
+  <script>
+    // Fetch and display portfolio
+    function loadPortfolio() {
+      document.getElementById('portfolio-loading').style.display = '';
+      axios.get('http://localhost:3001/api/portfolio')
+        .then(res => {
+          document.getElementById('portfolio-loading').style.display = 'none';
+          const p = res.data;
+          let html = `<strong>Cash:</strong> $${p.cash}<br/><br/>`;
+          html += '<strong>Stocks:</strong><ul>';
+          p.stocks.forEach(stock => {
+            html += `<li>${stock.ticker_symbol} (${stock.company_name}): ${stock.holding_shares} shares</li>`;
+          });
+          html += '</ul><strong>Funds:</strong><ul>';
+          p.funds.forEach(fund => {
+            html += `<li>${fund.fund_symbol} (${fund.fund_name}): ${fund.holding_fund} units</li>`;
+          });
+          html += '</ul>';
+          document.getElementById('portfolio').innerHTML = html;
+        })
+        .catch(() => {
+          document.getElementById('portfolio-loading').innerText = 'Error loading portfolio';
+        });
+    }
+    // Buy stock form
+    document.getElementById('buy-stock-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('message').innerText = '';
+      const ticker = document.getElementById('ticker').value;
+      const price = document.getElementById('price').value;
+      const shares = document.getElementById('shares').value;
+      axios.post('http://localhost:3001/api/portfolio/stock', {
+        ticker_symbol: ticker,
+        price: parseFloat(price),
+        number_of_shares: parseInt(shares, 10)
+      })
+      .then(res => {
+        document.getElementById('message').innerText = res.data.message;
+        loadPortfolio();
+      })
+      .catch(err => {
+        document.getElementById('message').innerText = err.response?.data?.error || 'Error buying stock';
+      });
+    });
+    // Fetch and display performance chart
+    function loadPerformanceChart() {
+      axios.get('http://localhost:3001/api/portfolio/performance')
+        .then(res => {
+          document.getElementById('chart-loading').style.display = 'none';
+          const data = res.data;
+          const ctx = document.getElementById('performanceChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.map(d => d.date),
+              datasets: [{
+                label: 'Portfolio Value',
+                data: data.map(d => d.total_value),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+              }]
+            },
+            options: {
+              responsive: false,
+              plugins: { legend: { display: true } }
+            }
+          });
+        })
+        .catch(() => {
+          document.getElementById('chart-loading').innerText = 'Error loading chart';
+        });
+    }
+    // Initial load
+    loadPortfolio();
+    loadPerformanceChart();
+  </script>
+</body>
+</html> 
