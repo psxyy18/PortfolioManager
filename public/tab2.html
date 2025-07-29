@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Market Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .index-container, .top-companies {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .indices {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    .index-box {
+      flex: 1 1 200px;
+      margin: 10px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #e5e7eb;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px;
+    }
+    th {
+      background-color: #111827;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    /* Filter Buttons */
+    .filter-buttons {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        margin: 20px 0;
+        padding-bottom: 10px;
+        scrollbar-width: none; /* Hide scrollbar in Firefox */
+    }
+    .filter-buttons::-webkit-scrollbar {
+        display: none; /* Hide scrollbar in WebKit browsers */
+    }
+    .filter-buttons button {
+        display: inline-block;
+        margin-right: 10px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        background-color: #2563eb;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+    }
+    .filter-buttons button:hover {
+        background-color: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Market Dashboard</h1>
+
+  <div class="index-container">
+    <h2>Major Indices</h2>
+    <div class="indices" id="indices"></div>
+  </div>
+
+  <div class="filter-buttons">
+      <button onclick="loadTopTickers('All')">All</button>
+      <button onclick="loadTopTickers('Technology')">Technology</button>
+      <button onclick="loadTopTickers('Industrials')">Industrials</button>
+      <button onclick="loadTopTickers('Healthcare')">Healthcare</button>
+      <button onclick="loadTopTickers('Basic Materials')">Basic Materials</button>
+      <button onclick="loadTopTickers('Consumer Cyclical')">Consumer Cyclical</button>
+      <button onclick="loadTopTickers('Real Estate')">Real Estate</button>
+      <button onclick="loadTopTickers('Financial Services')">Financial Services</button>
+      <button onclick="loadTopTickers('Consumer Defensive')">Consumer Defensive</button>
+      <button onclick="loadTopTickers('Utilities')">Utilities</button>
+      <button onclick="loadTopTickers('Energy')">Energy</button>
+      <!-- Add more buttons as needed -->
+    </div>
+
+  <div class="top-companies">
+    <h2>Top 10 Companies by Market Cap</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Name</th>
+          <th>Market Cap (T)</th>
+          <th>Price ($)</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+      <tbody id="company-table"></tbody>
+    </table>
+  </div>
+
+  <script src="tab2.js"></script>
+</body>
+</html>

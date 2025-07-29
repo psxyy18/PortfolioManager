@@ -1,7 +1,7 @@
 import yahooFinance from 'yahoo-finance2';
 
 // 1. Get the Historical Data for a specific ticker in a given period
-async function getTickerHistoricalData(period1, period2, interval, ticker) {
+export async function getTickerHistoricalData(period1, period2, interval, ticker) {
     const options = {
         period1: period1,
         period2: period2,
@@ -19,7 +19,7 @@ async function getTickerHistoricalData(period1, period2, interval, ticker) {
 }
 
 // 2. Get the Historical Data for a list of tickers in a given period
-async function getMultipleTickersHistoricalData(period1, period2, interval, tickers) {
+export async function getMultipleTickersHistoricalData(period1, period2, interval, tickers) {
     const promises = tickers.map(ticker => 
         getTickerHistoricalData(period1, period2, interval, ticker)
     );
@@ -29,7 +29,7 @@ async function getMultipleTickersHistoricalData(period1, period2, interval, tick
 }
 
 // 3. Get the Current Data for a specific ticker
-async function getTickerCurrentData(ticker) {
+export async function getTickerCurrentData(ticker) {
     try {
         const quote = await yahooFinance.quote(ticker);
         console.log(`Current data for ${ticker}:`);
@@ -41,7 +41,7 @@ async function getTickerCurrentData(ticker) {
 }
 
 // 4. Get the Current Data for a list of tickers
-async function getMultipleTickersCurrentData(tickers) {
+export async function getMultipleTickersCurrentData(tickers) {
     const promises = tickers.map(ticker => getTickerCurrentData(ticker));
     const results = await Promise.all(promises);
     return results;
