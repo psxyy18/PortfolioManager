@@ -2,7 +2,8 @@ import pandas as pd
 import mysql.connector
 
 # Load CSV
-df = pd.read_csv('stock_data.csv')  
+df_stock = pd.read_csv('stock_data.csv')  
+df_fund = pd.read_csv('funds_data.csv')
 
 # Connect to MySQL
 conn = mysql.connector.connect(
@@ -13,8 +14,10 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
-# Loop through rows
-for _, row in df.iterrows():
+##################################################
+# STOCK
+##################################################
+for _, row in df_stock.iterrows():
     try:
         ticker = row['ticker']
         company_name = row['company name']
@@ -39,6 +42,34 @@ for _, row in df.iterrows():
 
     except Exception as e:
         print(f"❌ Error inserting {row['ticker']}: {e}")
+
+##################################################
+# FUND
+##################################################
+for _, row in df_fund.iterrows():
+    try:
+        fund_symbol = row['fund_symbol']
+        fund_name = row['fund_short_name']  
+        total_net_assets = row.get('total_net_assets', 0.00)
+        fund_category = row.get('fund_category', None)
+        investment_type = row.get('investment_type', None)
+        size_type = row.get('size_type', None)
+
+        cursor.execute("""
+            INSERT INTO fund_info (
+                fund_symbol, fund_name, total_net_assets, fund_category, investment_type, size_type
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                fund_name = VALUES(fund_name),
+                total_net_assets = VALUES(total_net_assets),
+                fund_category = VALUES(fund_category),
+                investment_type = VALUES(investment_type),
+                size_type = VALUES(size_type)
+        """, (fund_symbol, fund_name, total_net_assets, fund_category, investment_type, size_type))
+
+    except Exception as e:
+        print(f"Error inserting fund {row['fund_symbol']}: {e}")
+
 
 # Commit & close
 conn.commit()

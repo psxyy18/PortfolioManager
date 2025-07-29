@@ -6,13 +6,13 @@ USE financial_db;
 
 # stock information
 CREATE TABLE stock_info (
-    ticker_symbol VARCHAR(10) UNIQUE,       -- "symbol": "AAPL"
-    company_name VARCHAR(255) NOT NULL,              -- "longName": "Apple Inc."
-    short_name VARCHAR(150),                      -- "fullExchangeName": "NasdaqGS"
-    exchange VARCHAR(50),                        -- "exchange": "NMS"
-    industry VARCHAR(100),                       -- "industry": "Consumer Electronics"
-    sector VARCHAR(100),                         -- "sector": "Technology"
-    market_cap DECIMAL(20,2) DEFAULT 0.00, -- "marketCap": 2.5e+12
+    ticker_symbol VARCHAR(10) UNIQUE,       
+    company_name VARCHAR(255) NOT NULL,     
+    short_name VARCHAR(150),                   
+    exchange VARCHAR(50),                   
+    industry VARCHAR(100),                    
+    sector VARCHAR(100),                     
+    market_cap DECIMAL(20,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (ticker_symbol)
 );
@@ -34,22 +34,23 @@ CREATE TABLE stock_hist (
 
 # fund information
 CREATE TABLE fund_info (
-    fund_id INT PRIMARY KEY,
+    fund_symbol VARCHAR(10) PRIMARY KEY,
     fund_name VARCHAR(255) NOT NULL,
-    price DECIMAL(10,2),
-    market VARCHAR(50),
-    risk_level VARCHAR(50)
+    -- price DECIMAL(10,2),
+    total_net_assets DECIMAL(15,2) DEFAULT 0.00, 
+    fund_category VARCHAR(50),
+    investment_type VARCHAR(50), 
+    size_type VARCHAR(50)
 );
 
 # basic user information
 CREATE TABLE user_info (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     user_name VARCHAR(100) NOT NULL,
-    user_contact VARCHAR(100) NOT NULL UNIQUE, -- Email
-    cash_balance DECIMAL(15,2) DEFAULT 0.00, -- Total cash available
+    user_contact VARCHAR(100) NOT NULL UNIQUE, 
+    cash_balance DECIMAL(15,2) DEFAULT 0.00, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 
 # stock transaction log
 CREATE TABLE stock_transaction_logs (
@@ -60,7 +61,6 @@ CREATE TABLE stock_transaction_logs (
     price DECIMAL(10,2) NOT NULL,
     number_of_shares INT NOT NULL,
     transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
     FOREIGN KEY (user_id) REFERENCES user_info(user_id),
     FOREIGN KEY (ticker_symbol) REFERENCES stock_info(ticker_symbol)
 );
@@ -83,27 +83,26 @@ CREATE TABLE user_stock_holding (
 CREATE TABLE fund_transaction_logs (
     transaction_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    fund_id INT NOT NULL,
+    fund_symbol VARCHAR(10) NOT NULL,
     transaction_type ENUM('BUY', 'SELL') NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     number_of_fund DECIMAL(10,4) NOT NULL,
     transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
     FOREIGN KEY (user_id) REFERENCES user_info(user_id),
-    FOREIGN KEY (fund_id) REFERENCES fund_info(fund_id)
+    FOREIGN KEY (fund_symbol) REFERENCES fund_info(fund_symbol)
 );
 
 # user current fund holdings
 CREATE TABLE user_fund_holding (
     user_id INT NOT NULL,
-    fund_id INT NOT NULL,
+    fund_symbol VARCHAR(10) NOT NULL,
     holding_fund DECIMAL(10,4) DEFAULT 0.0000,
     total_cost DECIMAL(15,2) DEFAULT 0.00,
     total_profit DECIMAL(15,2) DEFAULT 0.00,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, fund_id),
+    PRIMARY KEY (user_id, fund_symbol),
     FOREIGN KEY (user_id) REFERENCES user_info(user_id),
-    FOREIGN KEY (fund_id) REFERENCES fund_info(fund_id)
+    FOREIGN KEY (fund_symbol) REFERENCES fund_info(fund_symbol)
 );
 
 
@@ -160,8 +159,8 @@ BEGIN
   DECLARE profit DECIMAL(15,2);
 
   IF NEW.transaction_type = 'BUY' THEN
-    INSERT INTO user_fund_holding (user_id, fund_id, holding_fund, total_cost)
-    VALUES (NEW.user_id, NEW.fund_id, NEW.number_of_fund, NEW.price * NEW.number_of_fund)
+    INSERT INTO user_fund_holding (user_id, fund_symbol, holding_fund, total_cost)
+    VALUES (NEW.user_id, NEW.fund_symbol, NEW.number_of_fund, NEW.price * NEW.number_of_fund)
     ON DUPLICATE KEY UPDATE
       holding_fund = holding_fund + NEW.number_of_fund,
       total_cost = total_cost + (NEW.price * NEW.number_of_fund);
@@ -169,7 +168,7 @@ BEGIN
   ELSEIF NEW.transaction_type = 'SELL' THEN
     SELECT total_cost / holding_fund INTO avg_cost
     FROM user_fund_holding
-    WHERE user_id = NEW.user_id AND fund_id = NEW.fund_id;
+    WHERE user_id = NEW.user_id AND fund_symbol = NEW.fund_symbol;
 
     SET new_total_cost = avg_cost * NEW.number_of_fund;
     SET profit = (NEW.price * NEW.number_of_fund) - new_total_cost;
@@ -179,7 +178,7 @@ BEGIN
       holding_fund = holding_fund - NEW.number_of_fund,
       total_cost = total_cost - new_total_cost,
       total_profit = total_profit + profit
-    WHERE user_id = NEW.user_id AND fund_id = NEW.fund_id;
+    WHERE user_id = NEW.user_id AND fund_symbol = NEW.fund_symbol;
   END IF;
 END;
 //
