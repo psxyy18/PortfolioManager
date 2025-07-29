@@ -1,6 +1,7 @@
 {
   "name": "portfoliomanager",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -18,6 +19,7 @@
   },
   "homepage": "https://github.com/psxyy18/PortfolioManager#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "yahoo-finance2": "^2.13.3"
   }
 }
