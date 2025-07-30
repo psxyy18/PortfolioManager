@@ -24,6 +24,33 @@ export interface UserBalance {
   currency: string;
 }
 
+// 用户持仓信息接口
+export interface UserHolding {
+  stock: MarketStock;
+  quantity: number;
+  averageCost: number;
+  purchaseDate: string;
+  currentValue: number;
+  totalCost: number;
+  unrealizedPnL: number;
+  unrealizedPnLPercent: number;
+  todayPnL: number;
+  todayPnLPercent: number;
+}
+
+// 持仓组合汇总信息
+export interface PortfolioSummary {
+  totalValue: number;
+  totalCost: number;
+  totalUnrealizedPnL: number;
+  totalUnrealizedPnLPercent: number;
+  todayTotalPnL: number;
+  todayTotalPnLPercent: number;
+  cashBalance: number;
+  totalAssets: number;
+  weightedAverageReturn: number;
+}
+
 // Top 10 market stocks mock data
 export const marketTop10Stocks: MarketStock[] = [
   {
@@ -143,6 +170,92 @@ export const mockUserBalance: UserBalance = {
   cashBalance: 50000.00,
   currency: "USD"
 };
+
+// Mock用户持仓数据
+export const mockUserHoldings: UserHolding[] = [
+  {
+    stock: marketTop10Stocks[0], // AAPL
+    quantity: 150,
+    averageCost: 174.50,
+    purchaseDate: "2024-10-15",
+    currentValue: 150 * 195.89,
+    totalCost: 150 * 174.50,
+    unrealizedPnL: 150 * (195.89 - 174.50),
+    unrealizedPnLPercent: ((195.89 - 174.50) / 174.50) * 100,
+    todayPnL: 150 * 2.34,
+    todayPnLPercent: 1.21
+  },
+  {
+    stock: marketTop10Stocks[1], // MSFT
+    quantity: 80,
+    averageCost: 385.20,
+    purchaseDate: "2024-11-02",
+    currentValue: 80 * 378.85,
+    totalCost: 80 * 385.20,
+    unrealizedPnL: 80 * (378.85 - 385.20),
+    unrealizedPnLPercent: ((378.85 - 385.20) / 385.20) * 100,
+    todayPnL: 80 * (-1.45),
+    todayPnLPercent: -0.38
+  },
+  {
+    stock: marketTop10Stocks[2], // GOOGL
+    quantity: 45,
+    averageCost: 138.90,
+    purchaseDate: "2024-09-20",
+    currentValue: 45 * 142.30,
+    totalCost: 45 * 138.90,
+    unrealizedPnL: 45 * (142.30 - 138.90),
+    unrealizedPnLPercent: ((142.30 - 138.90) / 138.90) * 100,
+    todayPnL: 45 * 1.85,
+    todayPnLPercent: 1.32
+  },
+  {
+    stock: marketTop10Stocks[3], // TSLA
+    quantity: 120,
+    averageCost: 248.75,
+    purchaseDate: "2024-12-01",
+    currentValue: 120 * 251.20,
+    totalCost: 120 * 248.75,
+    unrealizedPnL: 120 * (251.20 - 248.75),
+    unrealizedPnLPercent: ((251.20 - 248.75) / 248.75) * 100,
+    todayPnL: 120 * (-3.80),
+    todayPnLPercent: -1.49
+  },
+  {
+    stock: marketTop10Stocks[4], // AMZN
+    quantity: 60,
+    averageCost: 142.10,
+    purchaseDate: "2024-10-28",
+    currentValue: 60 * 145.80,
+    totalCost: 60 * 142.10,
+    unrealizedPnL: 60 * (145.80 - 142.10),
+    unrealizedPnLPercent: ((145.80 - 142.10) / 142.10) * 100,
+    todayPnL: 60 * 0.95,
+    todayPnLPercent: 0.66
+  }
+];
+
+// 计算持仓组合汇总
+const calculatePortfolioSummary = (): PortfolioSummary => {
+  const totalValue = mockUserHoldings.reduce((sum, holding) => sum + holding.currentValue, 0);
+  const totalCost = mockUserHoldings.reduce((sum, holding) => sum + holding.totalCost, 0);
+  const totalUnrealizedPnL = mockUserHoldings.reduce((sum, holding) => sum + holding.unrealizedPnL, 0);
+  const todayTotalPnL = mockUserHoldings.reduce((sum, holding) => sum + holding.todayPnL, 0);
+  
+  return {
+    totalValue,
+    totalCost,
+    totalUnrealizedPnL,
+    totalUnrealizedPnLPercent: (totalUnrealizedPnL / totalCost) * 100,
+    todayTotalPnL,
+    todayTotalPnLPercent: (todayTotalPnL / totalValue) * 100,
+    cashBalance: mockUserBalance.cashBalance,
+    totalAssets: totalValue + mockUserBalance.cashBalance,
+    weightedAverageReturn: (totalUnrealizedPnL / totalCost) * 100
+  };
+};
+
+export const mockPortfolioSummary = calculatePortfolioSummary();
 
 // Mock purchase response
 export const mockPurchaseResponse = {

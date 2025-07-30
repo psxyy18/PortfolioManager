@@ -46,6 +46,19 @@ const data: StatCardProps[] = [
 ];
 
 export default function DashboardContent() {
+  // 管理选中的股票状态
+  const [selectedStock, setSelectedStock] = React.useState<string | null>(null);
+
+  // 处理气泡图中股票的点击事件
+  const handleStockSelect = (symbol: string | null) => {
+    setSelectedStock(symbol);
+  };
+
+  // 处理清除选择
+  const handleClearSelection = () => {
+    setSelectedStock(null);
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Box
@@ -121,15 +134,15 @@ export default function DashboardContent() {
             {/* 图表区域：左边气泡图，右边收益走势日历 */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <PortfolioBubbleChart />
+                <PortfolioBubbleChart onStockSelect={handleStockSelect} selectedStock={selectedStock} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <RevenueCalendarHeatmap />
+                <RevenueCalendarHeatmap selectedStock={selectedStock} onClearSelection={handleClearSelection} />
               </Grid>
             </Grid>
             
             {/* Development Test Links */}
-            <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 1 }}>
+            {/* <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 1 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 开发测试工具
               </Typography>
@@ -141,11 +154,11 @@ export default function DashboardContent() {
                 </Link>
                 <Link href="/details" passHref>
                   <Button variant="contained" size="small">
-                    � 专业股票交易平台
+                    Trade Platform
                   </Button>
                 </Link>
               </Stack>
-            </Box>
+            </Box> */}
           </Box>
         </Stack>
       </Box>

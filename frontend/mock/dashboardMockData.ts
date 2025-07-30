@@ -172,10 +172,10 @@ export const stockPriceHistories: StockPriceHistory[] = currentHoldings.map(hold
 
 // 账户总览数据
 export const accountOverview = {
-  totalValue: 126000, // 总资产
+  totalValue: 154987, // 总资产
   totalReturn: 4.8, // 总收益率
   dailyPnL: 1260, // 今日盈亏
-  holdingReturn: 6850, // 持仓收益
+  holdingReturn: 3369.5, // 持仓收益
   cumulativeReturn: 5680, // 累计收益
-  availableCash: 15000 // 可用现金
+  availableCash: 50000 // 可用现金
 };

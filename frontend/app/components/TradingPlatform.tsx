@@ -59,8 +59,12 @@ import {
 import { 
   marketTop10Stocks, 
   mockUserBalance,
+  mockUserHoldings,
+  mockPortfolioSummary,
   type MarketStock,
-  type UserBalance 
+  type UserBalance,
+  type UserHolding,
+  type PortfolioSummary
 } from '../../mock/marketMockData';
 
 // 更专业的接口定义
@@ -102,6 +106,8 @@ export default function TradingPlatform() {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedStock, setSelectedStock] = useState<MarketStock | null>(null);
   const [userBalance, setUserBalance] = useState<UserBalance>(mockUserBalance);
+  const [userHoldings, setUserHoldings] = useState<UserHolding[]>(mockUserHoldings);
+  const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary>(mockPortfolioSummary);
   
   // UI状态
   const [isRealTime, setIsRealTime] = useState(true);
@@ -180,6 +186,112 @@ export default function TradingPlatform() {
     });
   }, []);
 
+  // 更新持仓数据的函数
+  const updateHoldings = useCallback((stock: MarketStock, side: 'buy' | 'sell', quantity: number, price: number) => {
+    setUserHoldings(prev => {
+      const existingIndex = prev.findIndex(h => h.stock.symbol === stock.symbol);
+      
+      if (side === 'buy') {
+        if (existingIndex >= 0) {
+          // 增加持仓
+          const existing = prev[existingIndex];
+          const newQuantity = existing.quantity + quantity;
+          const newTotalCost = existing.totalCost + (quantity * price);
+          const newAverageCost = newTotalCost / newQuantity;
+          const currentValue = newQuantity * stock.currentPrice;
+          const unrealizedPnL = currentValue - newTotalCost;
+          
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...existing,
+            quantity: newQuantity,
+            averageCost: newAverageCost,
+            totalCost: newTotalCost,
+            currentValue,
+            unrealizedPnL,
+            unrealizedPnLPercent: (unrealizedPnL / newTotalCost) * 100,
+            todayPnL: newQuantity * (stock.dailyChange || 0),
+            todayPnLPercent: stock.dailyChangePercent || 0
+          };
+          return updated;
+        } else {
+          // 新增持仓
+          const totalCost = quantity * price;
+          const currentValue = quantity * stock.currentPrice;
+          const unrealizedPnL = currentValue - totalCost;
+          
+          return [...prev, {
+            stock,
+            quantity,
+            averageCost: price,
+            purchaseDate: new Date().toISOString().split('T')[0],
+            totalCost,
+            currentValue,
+            unrealizedPnL,
+            unrealizedPnLPercent: (unrealizedPnL / totalCost) * 100,
+            todayPnL: quantity * (stock.dailyChange || 0),
+            todayPnLPercent: stock.dailyChangePercent || 0
+          }];
+        }
+      } else {
+        // 卖出
+        if (existingIndex >= 0) {
+          const existing = prev[existingIndex];
+          const newQuantity = existing.quantity - quantity;
+          
+          if (newQuantity <= 0) {
+            // 清空持仓
+            return prev.filter((_, index) => index !== existingIndex);
+          } else {
+            // 减少持仓
+            const newTotalCost = existing.averageCost * newQuantity;
+            const currentValue = newQuantity * stock.currentPrice;
+            const unrealizedPnL = currentValue - newTotalCost;
+            
+            const updated = [...prev];
+            updated[existingIndex] = {
+              ...existing,
+              quantity: newQuantity,
+              totalCost: newTotalCost,
+              currentValue,
+              unrealizedPnL,
+              unrealizedPnLPercent: (unrealizedPnL / newTotalCost) * 100,
+              todayPnL: newQuantity * (stock.dailyChange || 0),
+              todayPnLPercent: stock.dailyChangePercent || 0
+            };
+            return updated;
+          }
+        }
+      }
+      return prev;
+    });
+  }, []);
+
+  // 重新计算组合摘要
+  const recalculatePortfolioSummary = useCallback(() => {
+    const totalValue = userHoldings.reduce((sum, holding) => sum + holding.currentValue, 0);
+    const totalCost = userHoldings.reduce((sum, holding) => sum + holding.totalCost, 0);
+    const totalUnrealizedPnL = userHoldings.reduce((sum, holding) => sum + holding.unrealizedPnL, 0);
+    const todayTotalPnL = userHoldings.reduce((sum, holding) => sum + holding.todayPnL, 0);
+    
+    setPortfolioSummary({
+      totalValue,
+      totalCost,
+      totalUnrealizedPnL,
+      totalUnrealizedPnLPercent: totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0,
+      todayTotalPnL,
+      todayTotalPnLPercent: totalValue > 0 ? (todayTotalPnL / totalValue) * 100 : 0,
+      cashBalance: userBalance.cashBalance,
+      totalAssets: totalValue + userBalance.cashBalance,
+      weightedAverageReturn: totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0
+    });
+  }, [userHoldings, userBalance.cashBalance]);
+
+  // 持仓数据变化时重新计算摘要
+  React.useEffect(() => {
+    recalculatePortfolioSummary();
+  }, [userHoldings, userBalance, recalculatePortfolioSummary]);
+
   const createOrder = useCallback((
     stock: MarketStock, 
     side: 'buy' | 'sell', 
@@ -195,6 +307,15 @@ export default function TradingPlatform() {
     if (side === 'buy' && totalValue > userBalance.cashBalance) {
       setNotifications(prev => [...prev, `资金不足: 需要 ${formatCurrency(totalValue)}`]);
       return;
+    }
+
+    // 持仓检查（卖出时）
+    if (side === 'sell') {
+      const existingHolding = userHoldings.find(h => h.stock.symbol === stock.symbol);
+      if (!existingHolding || existingHolding.quantity < quantity) {
+        setNotifications(prev => [...prev, `持仓不足: ${stock.symbol} 当前持仓 ${existingHolding?.quantity || 0} 股`]);
+        return;
+      }
     }
 
     const newOrder: TradingOrder = {
@@ -218,12 +339,21 @@ export default function TradingPlatform() {
           : order
       ));
 
+      // 更新资金
       if (side === 'buy') {
         setUserBalance(prev => ({
           ...prev,
           cashBalance: prev.cashBalance - totalValue
         }));
+      } else {
+        setUserBalance(prev => ({
+          ...prev,
+          cashBalance: prev.cashBalance + totalValue
+        }));
       }
+
+      // 更新持仓
+      updateHoldings(stock, side, quantity, orderPrice);
 
       setNotifications(prev => [...prev, 
         `${side === 'buy' ? '买入' : '卖出'} ${quantity} 股 ${stock.symbol} 成功`
@@ -231,7 +361,7 @@ export default function TradingPlatform() {
     }, 1000 + Math.random() * 2000);
 
     setTradeDialogOpen(false);
-  }, [userBalance.cashBalance]);
+  }, [userBalance.cashBalance, userHoldings, updateHoldings]);
 
   // 获取股票趋势图标
   const getTrendIcon = (change: number) => {
@@ -691,22 +821,323 @@ export default function TradingPlatform() {
 
       {/* 持仓分析 Tab */}
       {selectedTab === 3 && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              持仓分析
-            </Typography>
-            <Box textAlign="center" py={6}>
-              <AnalyticsIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">
-                敬请期待
+        <Stack spacing={3}>
+          {/* 持仓组合总览卡片 */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <AnalyticsIcon sx={{ mr: 1 }} />
+                持仓组合总览
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                持仓分析功能正在开发中
+              
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mt: 2 }}>
+                {/* 总资产 */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h4" fontWeight="bold" color="primary.main">
+                    {formatCurrency(portfolioSummary.totalAssets)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    总资产
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    持仓 {formatCurrency(portfolioSummary.totalValue)} + 现金 {formatCurrency(portfolioSummary.cashBalance)}
+                  </Typography>
+                </Box>
+
+                {/* 总收益 */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h4" fontWeight="bold" color={portfolioSummary.totalUnrealizedPnL >= 0 ? 'success.main' : 'error.main'}>
+                    {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.totalUnrealizedPnL)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    总盈亏 ({formatPercent(portfolioSummary.totalUnrealizedPnLPercent)})
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    成本 {formatCurrency(portfolioSummary.totalCost)}
+                  </Typography>
+                </Box>
+
+                {/* 今日收益 */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h4" fontWeight="bold" color={portfolioSummary.todayTotalPnL >= 0 ? 'success.main' : 'error.main'}>
+                    {portfolioSummary.todayTotalPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.todayTotalPnL)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    今日盈亏 ({formatPercent(portfolioSummary.todayTotalPnLPercent)})
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    加权平均收益率 {formatPercent(portfolioSummary.weightedAverageReturn)}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          {/* 持仓详情表格 */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                持仓明细 ({userHoldings.length})
               </Typography>
-            </Box>
-          </CardContent>
-        </Card>
+
+              {userHoldings.length === 0 ? (
+                <Box textAlign="center" py={6}>
+                  <AnalyticsIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary">
+                    暂无持仓
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    在市场行情中购买股票后会显示在这里
+                  </Typography>
+                </Box>
+              ) : (
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>股票</TableCell>
+                        <TableCell align="right">持仓数量</TableCell>
+                        <TableCell align="right">成本价</TableCell>
+                        <TableCell align="right">现价</TableCell>
+                        <TableCell align="right">市值</TableCell>
+                        <TableCell align="right">盈亏金额</TableCell>
+                        <TableCell align="right">盈亏比例</TableCell>
+                        <TableCell align="right">今日盈亏</TableCell>
+                        <TableCell align="right">仓位占比</TableCell>
+                        <TableCell align="center">操作</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {userHoldings.map((holding) => {
+                        const positionWeight = (holding.currentValue / portfolioSummary.totalValue) * 100;
+                        
+                        return (
+                          <TableRow key={holding.stock.symbol} hover>
+                            <TableCell>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                                  {holding.stock.symbol.charAt(0)}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="subtitle2" fontWeight="bold">
+                                    {holding.stock.symbol}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" noWrap>
+                                    {holding.stock.name}
+                                  </Typography>
+                                  <Box>
+                                    <Chip 
+                                      label={holding.stock.sector} 
+                                      size="small" 
+                                      variant="outlined"
+                                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                                    />
+                                  </Box>
+                                </Box>
+                              </Stack>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="bold">
+                                {holding.quantity} 股
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(holding.purchaseDate).toLocaleDateString()}
+                              </Typography>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {formatCurrency(holding.averageCost)}
+                              </Typography>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="bold">
+                                {formatCurrency(holding.stock.currentPrice)}
+                              </Typography>
+                              <Box display="flex" alignItems="center" justifyContent="flex-end">
+                                {getTrendIcon(holding.stock.dailyChangePercent)}
+                                <Typography variant="caption" color={getStockColor(holding.stock.dailyChangePercent)}>
+                                  {formatPercent(holding.stock.dailyChangePercent)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="bold">
+                                {formatCurrency(holding.currentValue)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                成本 {formatCurrency(holding.totalCost)}
+                              </Typography>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography 
+                                variant="body2" 
+                                fontWeight="bold"
+                                color={holding.unrealizedPnL >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {holding.unrealizedPnL >= 0 ? '+' : ''}{formatCurrency(holding.unrealizedPnL)}
+                              </Typography>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Chip
+                                label={formatPercent(holding.unrealizedPnLPercent)}
+                                size="small"
+                                color={holding.unrealizedPnLPercent >= 0 ? 'success' : 'error'}
+                                sx={{ fontWeight: 'bold' }}
+                              />
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Typography 
+                                variant="body2"
+                                color={holding.todayPnL >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {holding.todayPnL >= 0 ? '+' : ''}{formatCurrency(holding.todayPnL)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                ({formatPercent(holding.todayPnLPercent)})
+                              </Typography>
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Box>
+                                <Typography variant="body2" fontWeight="bold">
+                                  {positionWeight.toFixed(1)}%
+                                </Typography>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={positionWeight}
+                                  sx={{ width: '50px', height: 4, mt: 0.5 }}
+                                  color="primary"
+                                />
+                              </Box>
+                            </TableCell>
+
+                            <TableCell align="center">
+                              <Stack direction="row" spacing={0.5} justifyContent="center">
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="success"
+                                  onClick={() => {
+                                    setSelectedStock(holding.stock);
+                                    setTradeDialogOpen(true);
+                                  }}
+                                >
+                                  加仓
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => {
+                                    setSelectedStock(holding.stock);
+                                    setTradeDialogOpen(true);
+                                  }}
+                                >
+                                  减仓
+                                </Button>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 持仓分析统计 */}
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            {/* 行业分布 */}
+            <Card sx={{ flex: 1 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  行业分布
+                </Typography>
+                {userHoldings.length > 0 && (
+                  <Stack spacing={2}>
+                    {Array.from(new Set(userHoldings.map(h => h.stock.sector))).map(sector => {
+                      const sectorHoldings = userHoldings.filter(h => h.stock.sector === sector);
+                      const sectorValue = sectorHoldings.reduce((sum, h) => sum + h.currentValue, 0);
+                      const sectorWeight = (sectorValue / portfolioSummary.totalValue) * 100;
+                      const sectorPnL = sectorHoldings.reduce((sum, h) => sum + h.unrealizedPnL, 0);
+                      
+                      return (
+                        <Box key={sector}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2">{sector}</Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Typography variant="body2" fontWeight="bold">
+                                {sectorWeight.toFixed(1)}%
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                color={sectorPnL >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {sectorPnL >= 0 ? '+' : ''}{formatCurrency(sectorPnL)}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={sectorWeight}
+                            sx={{ height: 6, borderRadius: 1 }}
+                          />
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 风险指标 */}
+            <Card sx={{ flex: 1 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  风险指标
+                </Typography>
+                <Stack spacing={2}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2">持仓集中度</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {userHoldings.length > 0 ? 
+                        `${((Math.max(...userHoldings.map(h => h.currentValue)) / portfolioSummary.totalValue) * 100).toFixed(1)}%` : 
+                        '0%'
+                      }
+                    </Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2">现金比例</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {((portfolioSummary.cashBalance / portfolioSummary.totalAssets) * 100).toFixed(1)}%
+                    </Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2">盈利股票数</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                      {userHoldings.filter(h => h.unrealizedPnL > 0).length} / {userHoldings.length}
+                    </Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2">亏损股票数</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="error.main">
+                      {userHoldings.filter(h => h.unrealizedPnL < 0).length} / {userHoldings.length}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Stack>
+        </Stack>
       )}
 
       {/* 交易对话框 */}

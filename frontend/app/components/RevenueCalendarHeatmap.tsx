@@ -94,7 +94,72 @@ const generateStockPriceData = (): StockPriceData[] => {
   });
 };
 
-// 生成模拟收益数据
+// 生成基于特定股票的收益数据
+const generateStockBasedRevenueData = (year: number, month: number, stockSymbol?: string): DailyRevenue[] => {
+  const data: DailyRevenue[] = [];
+  const daysInMonth = new Date(year, month, 0).getDate();
+  
+  // 根据股票设置不同的收益模式
+  let baseRevenue = 0;
+  let volatility = 1;
+  
+  if (stockSymbol) {
+    switch (stockSymbol) {
+      case 'AAPL':
+        baseRevenue = 5; // Apple通常收益较稳定且偏正
+        volatility = 0.8;
+        break;
+      case 'TSLA':
+        baseRevenue = 0; // Tesla波动很大
+        volatility = 2.5;
+        break;
+      case 'MSFT':
+        baseRevenue = 3; // Microsoft相对稳定
+        volatility = 0.7;
+        break;
+      case 'GOOGL':
+        baseRevenue = 2;
+        volatility = 1.2;
+        break;
+      case 'AMZN':
+        baseRevenue = 1;
+        volatility = 1.5;
+        break;
+      default:
+        baseRevenue = 0;
+        volatility = 1;
+    }
+  }
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    const dayOfWeek = date.getDay();
+    
+    // 周末不产生收益
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      data.push({
+        date: dateString,
+        revenue: 0,
+        isWeekend: true,
+      });
+      continue;
+    }
+    
+    // 基于股票特性生成收益
+    const randomFactor = (Math.random() - 0.5) * 2; // -1 到 1
+    const revenue = baseRevenue + (randomFactor * 15 * volatility);
+    
+    data.push({
+      date: dateString,
+      revenue: Math.round(revenue * 100) / 100,
+    });
+  }
+  
+  return data;
+};
+
+// 生成模拟收益数据（原通用版本）
 const generateRevenueData = (year: number, month: number): DailyRevenue[] => {
   const data: DailyRevenue[] = [];
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -125,7 +190,13 @@ const generateRevenueData = (year: number, month: number): DailyRevenue[] => {
   return data;
 };
 
-const RevenueCalendarHeatmap: React.FC = () => {
+// 组件props接口
+interface RevenueCalendarHeatmapProps {
+  selectedStock?: string | null;
+  onClearSelection?: () => void;
+}
+
+const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selectedStock, onClearSelection }) => {
   const theme = useTheme();
   const [viewMode, setViewMode] = useState<'calendar' | 'chart'>('calendar');
   const [selectedMonth] = useState(new Date().getMonth() + 1);
@@ -133,11 +204,30 @@ const RevenueCalendarHeatmap: React.FC = () => {
   const [selectedStocks, setSelectedStocks] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL']);
   const [selectedSector, setSelectedSector] = useState<string>('all');
 
+  // 当从气泡图选择股票时，自动切换到图表模式并更新选择
+  React.useEffect(() => {
+    if (selectedStock) {
+      setViewMode('chart');
+      // 如果选中的股票不在当前选择中，添加它（保持最多4只股票）
+      setSelectedStocks(prev => {
+        if (!prev.includes(selectedStock)) {
+          const newSelection = [selectedStock, ...prev.slice(0, 3)];
+          return newSelection;
+        }
+        return prev;
+      });
+    }
+  }, [selectedStock]);
+
   // 生成当前月份数据和股票价格数据
-  const revenueData = useMemo(() => 
-    generateRevenueData(selectedYear, selectedMonth), 
-    [selectedYear, selectedMonth]
-  );
+  const revenueData = useMemo(() => {
+    // 如果有选中的股票，为该股票生成专门的收益数据
+    if (selectedStock) {
+      return generateStockBasedRevenueData(selectedYear, selectedMonth, selectedStock);
+    }
+    // 否则使用通用的收益数据
+    return generateRevenueData(selectedYear, selectedMonth);
+  }, [selectedYear, selectedMonth, selectedStock]);
 
   const stockData = useMemo(() => generateStockPriceData(), []);
 
@@ -283,9 +373,9 @@ const RevenueCalendarHeatmap: React.FC = () => {
           grid={{ vertical: true, horizontal: true }}
           slotProps={{
             legend: {
-              direction: 'row' as const,
+            //   direction: 'row',
               position: { vertical: 'bottom', horizontal: 'center' },
-              padding: 0,
+            //   padding: 0,
             },
           }}
         />
@@ -450,12 +540,29 @@ const RevenueCalendarHeatmap: React.FC = () => {
       <CardContent>
         {/* 标题和控制栏 */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h6" component="h2">
-            收益走势
-            <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-              (单位:元)
+          <Box>
+            <Typography variant="h6" component="h2">
+              收益走势
+              <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                (单位:元)
+              </Typography>
             </Typography>
-          </Typography>
+            {selectedStock && (
+              <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Chip 
+                  label={`已选择: ${selectedStock}`} 
+                  size="small" 
+                  color="primary" 
+                  variant="outlined"
+                  onDelete={onClearSelection}
+                  deleteIcon={<Box component="span" sx={{ fontSize: '14px' }}>×</Box>}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  来自投资组合分布
+                </Typography>
+              </Box>
+            )}
+          </Box>
           
           <ToggleButtonGroup
             value={viewMode}
@@ -544,7 +651,19 @@ const RevenueCalendarHeatmap: React.FC = () => {
 
         {/* 主要内容区域 */}
         {viewMode === 'calendar' ? (
-          renderCalendarGrid()
+          <Box>
+            {selectedStock && (
+              <Box sx={{ mb: 2, p: 1.5, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 1 }}>
+                <Typography variant="body2" color="primary" sx={{ fontWeight: 'medium' }}>
+                  📈 当前显示 {selectedStock} 的收益数据
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  数据已根据该股票的历史表现特征生成
+                </Typography>
+              </Box>
+            )}
+            {renderCalendarGrid()}
+          </Box>
         ) : (
           renderPriceChart()
         )}

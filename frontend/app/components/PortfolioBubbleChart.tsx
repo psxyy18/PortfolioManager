@@ -14,6 +14,8 @@ import { currentHoldings, marketTabs, StockHolding, MarketTab } from '../../mock
 
 interface BubbleChartProps {
   title?: string;
+  onStockSelect?: (symbol: string | null) => void;
+  selectedStock?: string | null;
 }
 
 interface TabPanelProps {
@@ -42,7 +44,11 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export default function StockHoldingsBubbleChart({ title = "投资组合分布" }: BubbleChartProps) {
+export default function StockHoldingsBubbleChart({ 
+  title = "投资组合分布", 
+  onStockSelect,
+  selectedStock 
+}: BubbleChartProps) {
   const [selectedMarket, setSelectedMarket] = React.useState(0);
 
   const handleMarketChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -103,6 +109,7 @@ export default function StockHoldingsBubbleChart({ title = "投资组合分布" 
         {holdings.map((holding) => {
           const size = calculateBubbleSize(holding.marketValue, maxValue);
           const color = getBubbleColor(holding.returnPercentage);
+          const isSelected = selectedStock === holding.symbol;
           
           return (
             <Tooltip
@@ -124,10 +131,21 @@ export default function StockHoldingsBubbleChart({ title = "投资组合分布" 
                   <Typography variant="body2">
                     当前价格: ${holding.currentPrice.toFixed(2)}
                   </Typography>
+                  <Typography variant="caption" color="primary">
+                    {isSelected ? '点击取消选中' : '点击查看详细走势'}
+                  </Typography>
                 </Box>
               }
             >
               <Box
+                onClick={() => {
+                  // 如果当前股票已被选中，则取消选中；否则选中
+                  if (isSelected) {
+                    onStockSelect?.(null);
+                  } else {
+                    onStockSelect?.(holding.symbol);
+                  }
+                }}
                 sx={{
                   width: size,
                   height: size,
@@ -138,8 +156,11 @@ export default function StockHoldingsBubbleChart({ title = "投资组合分布" 
                   justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
+                  border: isSelected ? '3px solid #1976d2' : '2px solid transparent',
+                  boxShadow: isSelected ? '0 0 12px rgba(25, 118, 210, 0.5)' : 'none',
+                  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                   '&:hover': {
-                    transform: 'scale(1.1)',
+                    transform: isSelected ? 'scale(1.1)' : 'scale(1.1)',
                     opacity: 0.8,
                   },
                   position: 'relative',
@@ -180,6 +201,9 @@ export default function StockHoldingsBubbleChart({ title = "投资组合分布" 
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+          💡 点击气泡查看收益走势，再次点击取消选中
         </Typography>
         
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>

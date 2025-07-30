@@ -12,24 +12,24 @@ import theme from '../theme';
 import { auth } from '../auth';
 
 const NAVIGATION: Navigation = [
-  {
-    kind: 'header',
-    title: '📈 Portfolio Trading',
-  },
+  // {
+  //   kind: 'header',
+  //   title: '📈 Portfolio Trading',
+  // },
   {
     title: 'Dashboard',
     icon: <DashboardIcon />,
   },
   {
     segment: 'details',
-    title: '专业股票交易',
+    title: 'Market Trade',
     icon: <TrendingUpIcon />,
   },
-  {
-    segment: 'mock-test',
-    title: 'Data Testing',
-    icon: <BugReportIcon />,
-  },
+  // {
+  //   segment: 'mock-test',
+  //   title: 'Data Testing',
+  //   icon: <BugReportIcon />,
+  // },
 ];
 
 const AUTHENTICATION = {
