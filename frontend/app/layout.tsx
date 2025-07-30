@@ -2,8 +2,9 @@ import * as React from 'react';
 import { NextAppProvider } from '@toolpad/core/nextjs';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import AssessmentIcon from '@mui/icons-material/Assessment';
+import StarIcon from '@mui/icons-material/Star';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Navigation, Branding } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
@@ -13,7 +14,7 @@ import { auth } from '../auth';
 const NAVIGATION: Navigation = [
   {
     kind: 'header',
-    title: 'Portfolio Management',
+    title: '📈 Portfolio Trading',
   },
   {
     title: 'Dashboard',
@@ -21,8 +22,13 @@ const NAVIGATION: Navigation = [
   },
   {
     segment: 'details',
-    title: 'Market Details',
+    title: '专业股票交易',
     icon: <TrendingUpIcon />,
+  },
+  {
+    segment: 'mock-test',
+    title: 'Data Testing',
+    icon: <BugReportIcon />,
   },
 ];
 

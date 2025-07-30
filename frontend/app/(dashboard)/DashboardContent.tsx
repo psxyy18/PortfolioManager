@@ -12,7 +12,7 @@ import Chip from '@mui/material/Chip';
 import Link from 'next/link';
 import StatCard, { StatCardProps } from '../components/StatCard';
 import PortfolioBubbleChart from '../components/PortfolioBubbleChart';
-import PortfolioLineChart from '../components/PortfolioLineChart';
+import RevenueCalendarHeatmap from '../components/RevenueCalendarHeatmap';
 import { accountOverview } from '../../mock/dashboardMockData';
 
 const data: StatCardProps[] = [
@@ -118,13 +118,13 @@ export default function DashboardContent() {
               ))}
             </Grid>
             
-            {/* 图表区域：左边气泡图，右边折线图 */}
+            {/* 图表区域：左边气泡图，右边收益走势日历 */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <PortfolioBubbleChart />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <PortfolioLineChart />
+                <RevenueCalendarHeatmap />
               </Grid>
             </Grid>
             
@@ -141,7 +141,7 @@ export default function DashboardContent() {
                 </Link>
                 <Link href="/details" passHref>
                   <Button variant="contained" size="small">
-                    🛒 市场股票购买页面
+                    � 专业股票交易平台
                   </Button>
                 </Link>
               </Stack>
