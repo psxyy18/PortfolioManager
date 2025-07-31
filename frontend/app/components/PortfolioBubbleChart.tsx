@@ -59,18 +59,19 @@ export default function StockHoldingsBubbleChart({
   };
 
   const getFilteredHoldings = (marketId: string): UserHolding[] => {
-    if (marketId === 'all') {
-      return userHoldings;
-    }
-    // 为了演示，我们可以根据股票代码来判断市场
-    // 以A开头的认为是美股，以其他开头的认为是其他市场
     return userHoldings.filter(holding => {
-      if (marketId === 'us') {
-        return holding.stock.symbol.startsWith('A') || holding.stock.symbol === 'MSFT' || holding.stock.symbol === 'AAPL';
-      } else if (marketId === 'hk') {
-        return holding.stock.symbol.startsWith('0') || holding.stock.symbol.startsWith('1');
-      } else if (marketId === 'cn') {
-        return holding.stock.symbol.match(/^\d{6}$/);
+      const symbol = holding.stock.symbol;
+      
+      if (marketId === 'US') {
+        // 美股：包含实际持仓的美股代码
+        const usStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM'];
+        return usStocks.includes(symbol);
+      } else if (marketId === 'HK') {
+        // 港股：以数字开头并包含.HK
+        return symbol.includes('.HK');
+      } else if (marketId === 'CN') {
+        // A股：6位数字开头，包含.SS或.SZ
+        return symbol.includes('.SS') || symbol.includes('.SZ');
       }
       return false;
     });

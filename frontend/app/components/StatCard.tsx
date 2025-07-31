@@ -15,6 +15,7 @@ export type StatCardProps = {
   interval: string;
   trend: 'up' | 'down' | 'neutral';
   data: number[];
+  trendValue?: string; // 可选的动态百分比值
 };
 
 function getDaysInMonth(month: number, year: number) {
@@ -43,7 +44,7 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
   );
 }
 
-export default function StatCard({ title, value, interval, trend, data }: StatCardProps) {
+export default function StatCard({ title, value, interval, trend, data, trendValue }: StatCardProps) {
   const theme = useTheme();
   const daysInWeek = getDaysInMonth(4, 2024);
 
@@ -62,6 +63,9 @@ export default function StatCard({ title, value, interval, trend, data }: StatCa
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
   const trendValues = { up: '+25%', down: '-25%', neutral: '+5%' };
+  
+  // 使用传入的trendValue或默认的placeholder值
+  const displayTrendValue = trendValue || trendValues[trend];
 
   return (
     <Card variant="outlined" sx={{ height: '100%', flexGrow: 1 }}>
@@ -75,7 +79,7 @@ export default function StatCard({ title, value, interval, trend, data }: StatCa
               <Typography variant="h4" component="p">
                 {value}
               </Typography>
-              <Chip size="small" color={color} label={trendValues[trend]} />
+              <Chip size="small" color={color} label={displayTrendValue} />
             </Stack>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {interval}

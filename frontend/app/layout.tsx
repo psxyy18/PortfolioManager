@@ -26,11 +26,11 @@ const NAVIGATION: Navigation = [
     title: 'Market Trade',
     icon: <TrendingUpIcon />,
   },
-  // {
-  //   segment: 'mock-test',
-  //   title: 'Data Testing',
-  //   icon: <BugReportIcon />,
-  // },
+  {
+    segment: 'data-test',
+    title: 'Portfolio Data',
+    icon: <BugReportIcon />,
+  },
 ];
 
 const AUTHENTICATION = {

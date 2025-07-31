@@ -133,7 +133,6 @@ export const currentHoldings: StockHolding[] = [
 
 // 市场标签
 export const marketTabs: MarketTab[] = [
-  { id: 'all', name: '全部', icon: '🌍' },
   { id: 'US', name: '美股', icon: '🇺🇸' },
   { id: 'CN', name: '沪深', icon: '🇨🇳' },
   { id: 'HK', name: '港股', icon: '🇭🇰' }

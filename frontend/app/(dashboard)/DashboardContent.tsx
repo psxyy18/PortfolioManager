@@ -14,6 +14,7 @@ import StatCard, { StatCardProps } from '../components/StatCard';
 import PortfolioBubbleChart from '../components/PortfolioBubbleChart';
 import SingleStockLineChart from '../components/SingleStockLineChart';
 import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { calculatePortfolioStats } from '../../data/portfolioData';
 
 export default function DashboardContent() {
   // 使用全局状态
@@ -24,6 +25,9 @@ export default function DashboardContent() {
     isLoading,
     error 
   } = useGlobalPortfolio();
+  
+  // 获取真实CSV数据
+  const csvStats = calculatePortfolioStats();
   
   // 管理选中的股票状态
   const [selectedStock, setSelectedStock] = React.useState<string | null>(null);
@@ -41,30 +45,27 @@ export default function DashboardContent() {
   const data: StatCardProps[] = React.useMemo(() => [
     {
       title: '今日收益',
-      value: `${portfolioSummary.todayTotalPnL >= 0 ? '+' : ''}${formatCurrency(Math.abs(portfolioSummary.todayTotalPnL))}`,
-      interval: 'Today',
-      trend: portfolioSummary.todayTotalPnL > 0 ? 'up' : 'down',
-      data: [
-        -200, 150, -80, 320, 180, -150, 240, 380, -120, 280, 420, 180, -90, 350, 220, -180, 290, 410, 160, -120, 380, 250, -200, 320, 180, -90, 450, 280, 360, portfolioSummary.todayTotalPnL,
-      ],
+      value: `${csvStats.dailyGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.dailyGain))}`,
+      interval: '今日表现',
+      trend: csvStats.dailyGain >= 0 ? 'up' : 'down',
+      trendValue: `${csvStats.dailyGainPercent >= 0 ? '+' : ''}${csvStats.dailyGainPercent.toFixed(2)}%`,
+      data: [], // 取消折线图
     },
     {
       title: '持仓收益',
-      value: `${portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}${formatCurrency(Math.abs(portfolioSummary.totalUnrealizedPnL))}`,
-      interval: 'Current Holdings',
-      trend: portfolioSummary.totalUnrealizedPnL > 0 ? 'up' : 'down',
-      data: [
-        2100, 2300, 2800, 3100, 2900, 3400, 3200, 3800, 4100, 3900, 4300, 4600, 4400, 4800, 4500, 5100, 4900, 5300, 5000, 5400, 5200, 5600, 5300, 5700, 5500, 5800, 5600, 6100, 5900, portfolioSummary.totalUnrealizedPnL,
-      ],
+      value: `${csvStats.holdingGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.holdingGain))}`,
+      interval: '30天持仓变化',
+      trend: csvStats.holdingGainPercent >= 0 ? 'up' : 'down',
+      trendValue: `${csvStats.holdingGainPercent >= 0 ? '+' : ''}${csvStats.holdingGainPercent.toFixed(2)}%`,
+      data: csvStats.holdingGainData.map(item => item.value),
     },
     {
-      title: '总资产',
-      value: formatCurrency(portfolioSummary.totalAssets),
-      interval: 'Total Assets',
-      trend: portfolioSummary.totalAssets > portfolioSummary.totalCost ? 'up' : 'down',
-      data: [
-        1200, 1400, 1800, 2100, 1900, 2400, 2200, 2800, 3100, 2900, 3300, 3600, 3400, 3800, 3500, 4100, 3900, 4300, 4000, 4400, 4200, 4600, 4300, 4700, 4500, 4800, 4600, 5100, 4900, portfolioSummary.totalAssets,
-      ],
+      title: '累计收益',
+      value: `${csvStats.cumulativeGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.cumulativeGain))}`,
+      interval: '总投资回报',
+      trend: csvStats.cumulativeGain >= 0 ? 'up' : 'down',
+      trendValue: `${csvStats.cumulativeGainPercent >= 0 ? '+' : ''}${csvStats.cumulativeGainPercent.toFixed(2)}%`,
+      data: csvStats.cumulativeGainData.map(item => item.value),
     },
   ], [portfolioSummary, formatCurrency]);
 
@@ -111,17 +112,17 @@ export default function DashboardContent() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, flexWrap: 'wrap' }}>
                       <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
-                        {formatCurrency(portfolioSummary.totalAssets)}
+                        {formatCurrency(csvStats.currentPortfolioValue)}
                       </Typography>
                       <Chip
-                        label={`${portfolioSummary.totalUnrealizedPnLPercent >= 0 ? '+' : ''}${portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%`}
-                        color={portfolioSummary.totalUnrealizedPnL >= 0 ? "success" : "error"}
+                        label={`${csvStats.totalReturnPercent >= 0 ? '+' : ''}${csvStats.totalReturnPercent.toFixed(2)}%`}
+                        color={csvStats.totalReturnPercent >= 0 ? "success" : "error"}
                         variant="outlined"
                         sx={{ fontSize: '1rem', height: '32px' }}
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      总资产 • 总收益率 {portfolioSummary.totalUnrealizedPnLPercent >= 0 ? '+' : ''}{portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%
+                      总资产 • 总收益 {csvStats.totalReturn >= 0 ? '+' : ''}{formatCurrency(csvStats.totalReturn)} • 30天表现
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
