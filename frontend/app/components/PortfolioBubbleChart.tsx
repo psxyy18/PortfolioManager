@@ -217,9 +217,9 @@ export default function StockHoldingsBubbleChart({
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+        {/* <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
           💡 点击气泡查看收益走势，再次点击取消选中
-        </Typography>
+        </Typography> */}
         
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
           <Tabs 

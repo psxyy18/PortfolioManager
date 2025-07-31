@@ -17,7 +17,6 @@ import {
   Select,
   MenuItem,
   Chip,
-  Checkbox,
   ListItemText,
   OutlinedInput,
 } from '@mui/material';
@@ -26,6 +25,7 @@ import {
   CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
 import { LineChart } from '@mui/x-charts/LineChart';
+import SingleStockLineChart from './SingleStockLineChart';
 
 // 模拟收益数据接口
 interface DailyRevenue {
@@ -204,18 +204,12 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
   const [selectedStocks, setSelectedStocks] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL']);
   const [selectedSector, setSelectedSector] = useState<string>('all');
 
-  // 当从气泡图选择股票时，自动切换到图表模式并更新选择
+  // 当从气泡图选择股票时，自动切换到图表模式
   React.useEffect(() => {
     if (selectedStock) {
       setViewMode('chart');
-      // 如果选中的股票不在当前选择中，添加它（保持最多4只股票）
-      setSelectedStocks(prev => {
-        if (!prev.includes(selectedStock)) {
-          const newSelection = [selectedStock, ...prev.slice(0, 3)];
-          return newSelection;
-        }
-        return prev;
-      });
+      // 将选中的股票设置为当前显示的股票
+      setSelectedStocks([selectedStock]);
     }
   }, [selectedStock]);
 
@@ -237,17 +231,6 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
     return ['all', ...allSectors];
   }, [stockData]);
 
-  // 根据筛选条件过滤股票
-  const filteredStockData = useMemo(() => {
-    let filtered = stockData;
-    
-    if (selectedSector !== 'all') {
-      filtered = filtered.filter(stock => stock.sector === selectedSector);
-    }
-    
-    return filtered.filter(stock => selectedStocks.includes(stock.symbol));
-  }, [stockData, selectedStocks, selectedSector]);
-
   // 计算月度统计
   const monthlyStats = useMemo(() => {
     const validData = revenueData.filter(d => !d.isWeekend);
@@ -265,21 +248,18 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
     };
   }, [revenueData]);
 
-  // 处理股票选择
+  // 处理股票选择（单选）
   const handleStockChange = (event: any) => {
     const value = event.target.value;
-    setSelectedStocks(typeof value === 'string' ? value.split(',') : value);
+    setSelectedStocks(value ? [value] : []);
   };
 
   // 处理行业筛选
   const handleSectorChange = (event: any) => {
     setSelectedSector(event.target.value);
-    // 当行业改变时，自动选择该行业的股票
+    // 当行业改变时，清空当前选择
     if (event.target.value !== 'all') {
-      const sectorStocks = stockData
-        .filter(stock => stock.sector === event.target.value)
-        .map(stock => stock.symbol);
-      setSelectedStocks(sectorStocks.slice(0, 4)); // 最多选择4只股票
+      setSelectedStocks([]);
     }
   };
 
@@ -325,79 +305,55 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
 
   // 渲染持仓价格折线图
   const renderPriceChart = () => {
-    if (filteredStockData.length === 0) {
+    // 如果有选中的股票，显示该股票的图表
+    if (selectedStock) {
       return (
-        <Box sx={{ 
-          height: 350, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          flexDirection: 'column',
-          color: 'text.secondary' 
-        }}>
-          <Typography variant="h6" gutterBottom>
-            请选择要显示的股票
-          </Typography>
-          <Typography variant="body2">
-            使用上方的筛选器选择股票和行业
-          </Typography>
+        <Box sx={{ width: '100%' }}>
+          <SingleStockLineChart 
+            selectedStock={selectedStock} 
+            title={`${selectedStock} 收益走势`}
+          />
         </Box>
       );
     }
 
-    // 准备图表数据
-    const dates = filteredStockData[0]?.prices.map(p => new Date(p.date)) || [];
-    const series = filteredStockData.map(stock => ({
-      id: stock.symbol,
-      label: `${stock.symbol} ($${stock.currentPrice})`,
-      data: stock.prices.map(p => p.price),
-      color: stock.color,
-    }));
-
-    return (
-      <Box sx={{ width: '100%', height: 350 }}>
-        <LineChart
-          xAxis={[
-            {
-              id: 'dates',
-              data: dates,
-              scaleType: 'time',
-              valueFormatter: (date: Date) => {
-                return `${date.getMonth() + 1}/${date.getDate()}`;
-              },
-            },
-          ]}
-          series={series}
-          height={350}
-          margin={{ left: 80, right: 20, top: 20, bottom: 60 }}
-          grid={{ vertical: true, horizontal: true }}
-          slotProps={{
-            legend: {
-            //   direction: 'row',
-              position: { vertical: 'bottom', horizontal: 'center' },
-            //   padding: 0,
-            },
-          }}
-        />
-        
-        {/* 股票表现统计 */}
-        <Box sx={{ mt: 2 }}>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {filteredStockData.map(stock => (
-              <Chip
-                key={stock.symbol}
-                label={`${stock.symbol}: ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%`}
-                size="small"
-                sx={{
-                  backgroundColor: stock.changePercent >= 0 ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
-                  color: stock.changePercent >= 0 ? theme.palette.error.main : theme.palette.success.main,
-                  border: '1px solid',
-                  borderColor: stock.changePercent >= 0 ? theme.palette.error.main : theme.palette.success.main,
-                }}
-              />
-            ))}
-          </Stack>
+    // 如果从筛选器选择了股票，显示第一个选中股票的图表
+    if (selectedStocks.length > 0) {
+      const stockToShow = selectedStocks[0];
+      return (
+        <Box sx={{ width: '100%' }}>
+          <SingleStockLineChart 
+            selectedStock={stockToShow} 
+            title={`${stockToShow} 收益走势`}
+          />
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: alpha(theme.palette.info.main, 0.1), borderRadius: 1 }}>
+            <Typography variant="body2" color="info.main" sx={{ fontWeight: 'medium' }}>
+              📊 当前显示: {stockToShow}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              选中了多只股票时，默认显示第一只的详细走势
+            </Typography>
+          </Box>
         </Box>
+      );
+    }
+
+    // 没有选中任何股票时的提示
+    return (
+      <Box sx={{ 
+        height: 350, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        flexDirection: 'column',
+        color: 'text.secondary' 
+      }}>
+        <Typography variant="h6" gutterBottom>
+          请选择要显示的股票
+        </Typography>
+        <Typography variant="body2">
+          从投资组合分布中选择股票，或使用上方的筛选器
+        </Typography>
       </Box>
     );
   };
@@ -599,8 +555,8 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
           </Stack>
         </Box>
 
-        {/* 筛选控件 (仅在曲线图模式显示) */}
-        {viewMode === 'chart' && (
+        {/* 筛选控件 (仅在曲线图模式显示且没有从外部选择股票时) */}
+        {viewMode === 'chart' && !selectedStock && (
           <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -620,23 +576,14 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <InputLabel>选择股票</InputLabel>
                 <Select
-                  multiple
-                  value={selectedStocks}
-                  onChange={handleStockChange}
+                  value={selectedStocks.length > 0 ? selectedStocks[0] : ''}
+                  onChange={(e) => setSelectedStocks(e.target.value ? [e.target.value] : [])}
                   input={<OutlinedInput label="选择股票" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
                 >
                   {stockData
                     .filter(stock => selectedSector === 'all' || stock.sector === selectedSector)
                     .map((stock) => (
                     <MenuItem key={stock.symbol} value={stock.symbol}>
-                      <Checkbox checked={selectedStocks.indexOf(stock.symbol) > -1} />
                       <ListItemText 
                         primary={`${stock.symbol} - ${stock.name}`}
                         secondary={`${stock.sector} • $${stock.currentPrice}`}
@@ -646,6 +593,9 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
                 </Select>
               </FormControl>
             </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              💡 也可以从投资组合分布图中直接选择股票查看详细走势
+            </Typography>
           </Box>
         )}
 

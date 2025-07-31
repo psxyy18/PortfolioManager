@@ -127,13 +127,19 @@ export default function SingleStockLineChart({
                 valueFormatter: (date: Date) => {
                   return `${date.getMonth() + 1}/${date.getDate()}`;
                 },
+                hideTooltip: false,
+                disableLine: true,
+                disableTicks: false,
               },
             ]}
             yAxis={[
               {
                 id: 'return',
-                label: '收益率 (%)',
+                label: '',
                 valueFormatter: (value: number) => `${value.toFixed(1)}%`,
+                hideTooltip: false,
+                disableLine: true,
+                disableTicks: false,
               },
             ]}
             series={[
@@ -143,12 +149,16 @@ export default function SingleStockLineChart({
                 data: returnData.map(d => d.returnPercent),
                 color: '#1976d2', // 蓝色
                 curve: 'linear',
+                valueFormatter: (value: number | null) => {
+                  if (value === null) return '';
+                  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+                },
               }
             ]}
             width={undefined}
             height={300}
-            margin={{ left: 80, right: 20, top: 20, bottom: 40 }}
-            grid={{ horizontal: true, vertical: true }}
+            margin={{ left: 60, right: 20, top: 20, bottom: 40 }}
+            grid={{ horizontal: false, vertical: false }}
             sx={{
               '& .MuiLineElement-root': {
                 strokeWidth: 2,
@@ -158,6 +168,20 @@ export default function SingleStockLineChart({
               },
               '& .MuiChartsLegend-root': {
                 display: 'none', // 隐藏图例
+              },
+              '& .MuiChartsAxis-root': {
+                '& .MuiChartsAxis-line': {
+                  display: 'none', // 隐藏轴线
+                },
+                '& .MuiChartsAxis-tick': {
+                  display: 'none', // 隐藏刻度线
+                },
+                '& .MuiChartsAxis-tickLabel': {
+                  display: 'block', // 显示刻度标签（数字和日期）
+                },
+                '& .MuiChartsAxis-label': {
+                  display: 'none', // 隐藏轴标签
+                },
               },
             }}
           />

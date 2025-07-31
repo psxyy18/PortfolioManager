@@ -58,7 +58,7 @@ export default function DashboardContent() {
       interval: '30天持仓变化',
       trend: csvStats.holdingGainPercent >= 0 ? 'up' : 'down',
       trendValue: `${csvStats.holdingGainPercent >= 0 ? '+' : ''}${csvStats.holdingGainPercent.toFixed(2)}%`,
-      data: csvStats.holdingGainData.map(item => item.value),
+      data: csvStats.holdingGainData.map(item => Math.round(item.value * 100) / 100), // 确保数据为两位小数
     },
     {
       title: '累计收益',
@@ -125,9 +125,9 @@ export default function DashboardContent() {
                     {/* <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       总资产 • 总收益 {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.totalUnrealizedPnL)} • 实时数据
                     </Typography> */}
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {/* <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       持仓 {formatCurrency(portfolioSummary.totalValue)} + 现金 {formatCurrency(userBalance.cashBalance)} • 总收益 {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.totalUnrealizedPnL)}
-                    </Typography>
+                    </Typography> */}
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -164,9 +164,9 @@ export default function DashboardContent() {
             </Grid>
             
             {/* 收益走势日历热力图 */}
-            <Box sx={{ mb: 3 }}>
+            {/* <Box sx={{ mb: 3 }}>
               <RevenueCalendarHeatmap selectedStock={selectedStock} onClearSelection={() => setSelectedStock(null)} />
-            </Box>
+            </Box> */}
             
             
             {/* Development Test Links */}

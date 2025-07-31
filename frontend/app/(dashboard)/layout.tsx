@@ -23,7 +23,7 @@ export default function Layout(props: { children: React.ReactNode }) {
       }}
     >
       {props.children}
-      <Copyright sx={{ my: 4 }} />
+      {/* <Copyright sx={{ my: 4 }} /> */}
     </DashboardLayout>
   );
 }

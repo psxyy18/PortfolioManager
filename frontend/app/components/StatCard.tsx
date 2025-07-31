@@ -100,6 +100,14 @@ export default function StatCard({ title, value, interval, trend, data, trendVal
               area
               showHighlight
               showTooltip
+              valueFormatter={(value: number | null) => {
+                if (value === null) return '';
+                // 为持仓收益（包含收益数据）显示两位小数
+                if (title === '持仓收益' || title === '累计收益') {
+                  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+                }
+                return value.toString();
+              }}
               xAxis={{
                 scaleType: 'band',
                 data: daysInWeek, // Use the correct property 'data' for xAxis
