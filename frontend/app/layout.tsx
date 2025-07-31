@@ -10,6 +10,7 @@ import type { Navigation, Branding } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import theme from '../theme';
 import { auth } from '../auth';
+import { GlobalPortfolioProvider } from '../contexts/GlobalPortfolioContext';
 
 const NAVIGATION: Navigation = [
   // {
@@ -49,15 +50,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <SessionProvider session={session}>
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-            <NextAppProvider
-              theme={theme}
-              navigation={NAVIGATION}
-              branding={BRANDING}
-              session={session}
-              authentication={AUTHENTICATION}
-            >
-              {children}
-            </NextAppProvider>
+            <GlobalPortfolioProvider>
+              <NextAppProvider
+                theme={theme}
+                navigation={NAVIGATION}
+                branding={BRANDING}
+                session={session}
+                authentication={AUTHENTICATION}
+              >
+                {children}
+              </NextAppProvider>
+            </GlobalPortfolioProvider>
           </AppRouterCacheProvider>
         </SessionProvider>
       </body>

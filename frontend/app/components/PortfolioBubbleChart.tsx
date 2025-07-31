@@ -10,7 +10,9 @@ import {
   Tooltip,
   Chip
 } from '@mui/material';
-import { currentHoldings, marketTabs, StockHolding, MarketTab } from '../../mock/dashboardMockData';
+import { marketTabs, MarketTab } from '../../mock/dashboardMockData';
+import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { UserHolding } from '../../contexts/GlobalPortfolioContext';
 
 interface BubbleChartProps {
   title?: string;
@@ -50,16 +52,28 @@ export default function StockHoldingsBubbleChart({
   selectedStock 
 }: BubbleChartProps) {
   const [selectedMarket, setSelectedMarket] = React.useState(0);
+  const { userHoldings } = useGlobalPortfolio();
 
   const handleMarketChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedMarket(newValue);
   };
 
-  const getFilteredHoldings = (marketId: string): StockHolding[] => {
+  const getFilteredHoldings = (marketId: string): UserHolding[] => {
     if (marketId === 'all') {
-      return currentHoldings;
+      return userHoldings;
     }
-    return currentHoldings.filter(holding => holding.market === marketId);
+    // 为了演示，我们可以根据股票代码来判断市场
+    // 以A开头的认为是美股，以其他开头的认为是其他市场
+    return userHoldings.filter(holding => {
+      if (marketId === 'us') {
+        return holding.stock.symbol.startsWith('A') || holding.stock.symbol === 'MSFT' || holding.stock.symbol === 'AAPL';
+      } else if (marketId === 'hk') {
+        return holding.stock.symbol.startsWith('0') || holding.stock.symbol.startsWith('1');
+      } else if (marketId === 'cn') {
+        return holding.stock.symbol.match(/^\d{6}$/);
+      }
+      return false;
+    });
   };
 
   const calculateBubbleSize = (marketValue: number, maxValue: number): number => {
@@ -79,7 +93,7 @@ export default function StockHoldingsBubbleChart({
     }
   };
 
-  const renderBubbles = (holdings: StockHolding[]) => {
+  const renderBubbles = (holdings: UserHolding[]) => {
     if (holdings.length === 0) {
       return (
         <Box sx={{ 
@@ -94,7 +108,7 @@ export default function StockHoldingsBubbleChart({
       );
     }
 
-    const maxValue = Math.max(...holdings.map(h => h.marketValue));
+    const maxValue = Math.max(...holdings.map(h => h.currentValue));
     
     return (
       <Box sx={{ 
@@ -107,29 +121,29 @@ export default function StockHoldingsBubbleChart({
         p: 2
       }}>
         {holdings.map((holding) => {
-          const size = calculateBubbleSize(holding.marketValue, maxValue);
-          const color = getBubbleColor(holding.returnPercentage);
-          const isSelected = selectedStock === holding.symbol;
+          const size = calculateBubbleSize(holding.currentValue, maxValue);
+          const color = getBubbleColor(holding.unrealizedPnLPercent);
+          const isSelected = selectedStock === holding.stock.symbol;
           
           return (
             <Tooltip
-              key={holding.symbol}
+              key={holding.stock.symbol}
               title={
                 <Box>
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {holding.name} ({holding.symbol})
+                    {holding.stock.name} ({holding.stock.symbol})
                   </Typography>
                   <Typography variant="body2">
-                    市值: ${holding.marketValue.toLocaleString()}
+                    市值: ${holding.currentValue.toLocaleString()}
                   </Typography>
                   <Typography variant="body2">
-                    收益率: {holding.returnPercentage > 0 ? '+' : ''}{holding.returnPercentage.toFixed(2)}%
+                    收益率: {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(2)}%
                   </Typography>
                   <Typography variant="body2">
-                    持仓: {holding.shares} 股
+                    持仓: {holding.quantity} 股
                   </Typography>
                   <Typography variant="body2">
-                    当前价格: ${holding.currentPrice.toFixed(2)}
+                    当前价格: ${holding.stock.currentPrice.toFixed(2)}
                   </Typography>
                   <Typography variant="caption" color="primary">
                     {isSelected ? '点击取消选中' : '点击查看详细走势'}
@@ -143,7 +157,7 @@ export default function StockHoldingsBubbleChart({
                   if (isSelected) {
                     onStockSelect?.(null);
                   } else {
-                    onStockSelect?.(holding.symbol);
+                    onStockSelect?.(holding.stock.symbol);
                   }
                 }}
                 sx={{
@@ -179,13 +193,13 @@ export default function StockHoldingsBubbleChart({
                     lineHeight: 1,
                     mb: 0.5
                   }}>
-                    {holding.symbol.length > 6 ? holding.symbol.substring(0, 6) : holding.symbol}
+                    {holding.stock.symbol.length > 6 ? holding.stock.symbol.substring(0, 6) : holding.stock.symbol}
                   </Typography>
                   <Typography variant="caption" sx={{ 
                     fontSize: 'inherit',
                     lineHeight: 1
                   }}>
-                    {holding.returnPercentage > 0 ? '+' : ''}{holding.returnPercentage.toFixed(1)}%
+                    {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(1)}%
                   </Typography>
                 </Box>
               </Box>

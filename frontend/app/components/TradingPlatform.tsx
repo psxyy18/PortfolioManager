@@ -33,6 +33,7 @@ import {
   Badge,
   Switch,
   FormControlLabel,
+  Container,
 } from '@mui/material';
 import {
   StarBorder as StarBorderIcon,
@@ -53,6 +54,8 @@ import {
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
   AccountBalance as AccountBalanceIcon,
+  AccountBalanceWallet,
+  ShowChart,
   TrendingDownOutlined,
   TrendingUpOutlined,
 } from '@mui/icons-material';
@@ -66,6 +69,8 @@ import {
   type UserHolding,
   type PortfolioSummary
 } from '../../mock/marketMockData';
+import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import AccountManagement from './AccountManagement';
 
 // 更专业的接口定义
 interface WatchlistStock {
@@ -100,14 +105,14 @@ interface MarketTicker {
 }
 
 export default function TradingPlatform() {
+  // 使用全局状态
+  const { userBalance, userHoldings, portfolioSummary, executeOrder, addCash, withdrawCash } = useGlobalPortfolio();
+  
   // 核心状态
   const [watchlist, setWatchlist] = useState<WatchlistStock[]>([]);
   const [orders, setOrders] = useState<TradingOrder[]>([]);
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedStock, setSelectedStock] = useState<MarketStock | null>(null);
-  const [userBalance, setUserBalance] = useState<UserBalance>(mockUserBalance);
-  const [userHoldings, setUserHoldings] = useState<UserHolding[]>(mockUserHoldings);
-  const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary>(mockPortfolioSummary);
   
   // UI状态
   const [isRealTime, setIsRealTime] = useState(true);
@@ -120,6 +125,14 @@ export default function TradingPlatform() {
   // 通知和消息
   const [notifications, setNotifications] = useState<string[]>([]);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  // 格式化货币
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('en-US', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  };
 
   // 计算衍生数据
   const watchlistSymbols = useMemo(() => 
@@ -151,9 +164,6 @@ export default function TradingPlatform() {
   );
 
   // 格式化函数
-  const formatCurrency = (amount: number) => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-
   const formatPercent = (percent: number) => 
     `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
 
@@ -186,182 +196,28 @@ export default function TradingPlatform() {
     });
   }, []);
 
-  // 更新持仓数据的函数
-  const updateHoldings = useCallback((stock: MarketStock, side: 'buy' | 'sell', quantity: number, price: number) => {
-    setUserHoldings(prev => {
-      const existingIndex = prev.findIndex(h => h.stock.symbol === stock.symbol);
-      
-      if (side === 'buy') {
-        if (existingIndex >= 0) {
-          // 增加持仓
-          const existing = prev[existingIndex];
-          const newQuantity = existing.quantity + quantity;
-          const newTotalCost = existing.totalCost + (quantity * price);
-          const newAverageCost = newTotalCost / newQuantity;
-          const currentValue = newQuantity * stock.currentPrice;
-          const unrealizedPnL = currentValue - newTotalCost;
-          
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...existing,
-            quantity: newQuantity,
-            averageCost: newAverageCost,
-            totalCost: newTotalCost,
-            currentValue,
-            unrealizedPnL,
-            unrealizedPnLPercent: (unrealizedPnL / newTotalCost) * 100,
-            todayPnL: newQuantity * (stock.dailyChange || 0),
-            todayPnLPercent: stock.dailyChangePercent || 0
-          };
-          return updated;
-        } else {
-          // 新增持仓
-          const totalCost = quantity * price;
-          const currentValue = quantity * stock.currentPrice;
-          const unrealizedPnL = currentValue - totalCost;
-          
-          return [...prev, {
-            stock,
-            quantity,
-            averageCost: price,
-            purchaseDate: new Date().toISOString().split('T')[0],
-            totalCost,
-            currentValue,
-            unrealizedPnL,
-            unrealizedPnLPercent: (unrealizedPnL / totalCost) * 100,
-            todayPnL: quantity * (stock.dailyChange || 0),
-            todayPnLPercent: stock.dailyChangePercent || 0
-          }];
-        }
-      } else {
-        // 卖出
-        if (existingIndex >= 0) {
-          const existing = prev[existingIndex];
-          const newQuantity = existing.quantity - quantity;
-          
-          if (newQuantity <= 0) {
-            // 清空持仓
-            return prev.filter((_, index) => index !== existingIndex);
-          } else {
-            // 减少持仓
-            const newTotalCost = existing.averageCost * newQuantity;
-            const currentValue = newQuantity * stock.currentPrice;
-            const unrealizedPnL = currentValue - newTotalCost;
-            
-            const updated = [...prev];
-            updated[existingIndex] = {
-              ...existing,
-              quantity: newQuantity,
-              totalCost: newTotalCost,
-              currentValue,
-              unrealizedPnL,
-              unrealizedPnLPercent: (unrealizedPnL / newTotalCost) * 100,
-              todayPnL: newQuantity * (stock.dailyChange || 0),
-              todayPnLPercent: stock.dailyChangePercent || 0
-            };
-            return updated;
-          }
-        }
-      }
-      return prev;
-    });
-  }, []);
-
-  // 重新计算组合摘要
-  const recalculatePortfolioSummary = useCallback(() => {
-    const totalValue = userHoldings.reduce((sum, holding) => sum + holding.currentValue, 0);
-    const totalCost = userHoldings.reduce((sum, holding) => sum + holding.totalCost, 0);
-    const totalUnrealizedPnL = userHoldings.reduce((sum, holding) => sum + holding.unrealizedPnL, 0);
-    const todayTotalPnL = userHoldings.reduce((sum, holding) => sum + holding.todayPnL, 0);
-    
-    setPortfolioSummary({
-      totalValue,
-      totalCost,
-      totalUnrealizedPnL,
-      totalUnrealizedPnLPercent: totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0,
-      todayTotalPnL,
-      todayTotalPnLPercent: totalValue > 0 ? (todayTotalPnL / totalValue) * 100 : 0,
-      cashBalance: userBalance.cashBalance,
-      totalAssets: totalValue + userBalance.cashBalance,
-      weightedAverageReturn: totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0
-    });
-  }, [userHoldings, userBalance.cashBalance]);
-
-  // 持仓数据变化时重新计算摘要
-  React.useEffect(() => {
-    recalculatePortfolioSummary();
-  }, [userHoldings, userBalance, recalculatePortfolioSummary]);
-
-  const createOrder = useCallback((
+  // 交易执行函数（使用全局状态）
+  const handleTrade = useCallback(async (
     stock: MarketStock, 
     side: 'buy' | 'sell', 
     quantity: number, 
     type: 'market' | 'limit' = 'market',
     price?: number
   ) => {
-    const orderId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const orderPrice = type === 'market' ? stock.currentPrice : (price || stock.currentPrice);
-    const totalValue = quantity * orderPrice;
-
-    // 资金检查
-    if (side === 'buy' && totalValue > userBalance.cashBalance) {
-      setNotifications(prev => [...prev, `资金不足: 需要 ${formatCurrency(totalValue)}`]);
-      return;
-    }
-
-    // 持仓检查（卖出时）
-    if (side === 'sell') {
-      const existingHolding = userHoldings.find(h => h.stock.symbol === stock.symbol);
-      if (!existingHolding || existingHolding.quantity < quantity) {
-        setNotifications(prev => [...prev, `持仓不足: ${stock.symbol} 当前持仓 ${existingHolding?.quantity || 0} 股`]);
-        return;
-      }
-    }
-
-    const newOrder: TradingOrder = {
-      id: orderId,
-      stock,
-      type,
-      side,
-      quantity,
-      price: orderPrice,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    setOrders(prev => [...prev, newOrder]);
-
-    // 模拟订单执行
-    setTimeout(() => {
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, status: 'filled', filledAt: new Date().toISOString() }
-          : order
-      ));
-
-      // 更新资金
-      if (side === 'buy') {
-        setUserBalance(prev => ({
-          ...prev,
-          cashBalance: prev.cashBalance - totalValue
-        }));
+    try {
+      const success = await executeOrder(stock, side, quantity);
+      
+      if (success) {
+        setNotifications(prev => [...prev, `${side === 'buy' ? '买入' : '卖出'} ${stock.symbol} ${quantity}股 成功`]);
+        setTradeDialogOpen(false);
       } else {
-        setUserBalance(prev => ({
-          ...prev,
-          cashBalance: prev.cashBalance + totalValue
-        }));
+        setNotifications(prev => [...prev, '交易失败，请稍后重试']);
       }
-
-      // 更新持仓
-      updateHoldings(stock, side, quantity, orderPrice);
-
-      setNotifications(prev => [...prev, 
-        `${side === 'buy' ? '买入' : '卖出'} ${quantity} 股 ${stock.symbol} 成功`
-      ]);
-    }, 1000 + Math.random() * 2000);
-
-    setTradeDialogOpen(false);
-  }, [userBalance.cashBalance, userHoldings, updateHoldings]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '交易失败';
+      setNotifications(prev => [...prev, errorMessage]);
+    }
+  }, [executeOrder]);
 
   // 获取股票趋势图标
   const getTrendIcon = (change: number) => {
@@ -379,6 +235,66 @@ export default function TradingPlatform() {
 
   return (
     <Box sx={{ p: 2, bgcolor: 'background.default', minHeight: '100vh' }}>
+      {/* 账户信息和管理区域 */}
+      <Container maxWidth="lg" sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={3} sx={{ mb: 3 }}>
+          <Card sx={{ flex: 1 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <AccountBalanceWallet sx={{ mr: 1, color: 'primary.main' }} />
+                <Typography variant="h6">可用现金</Typography>
+              </Box>
+              <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
+                {formatCurrency(userBalance.cashBalance)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                可用于新的投资和交易
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ flex: 1 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ShowChart sx={{ mr: 1, color: 'success.main' }} />
+                <Typography variant="h6">总资产</Typography>
+              </Box>
+              <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
+                {formatCurrency(portfolioSummary.totalAssets)}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                {portfolioSummary.totalUnrealizedPnL >= 0 ? (
+                  <TrendingUpIcon sx={{ color: 'success.main', fontSize: 16, mr: 0.5 }} />
+                ) : (
+                  <TrendingDownIcon sx={{ color: 'error.main', fontSize: 16, mr: 0.5 }} />
+                )}
+                <Typography 
+                  variant="body2" 
+                  color={portfolioSummary.totalUnrealizedPnL >= 0 ? 'success.main' : 'error.main'}
+                >
+                  {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}
+                  {formatCurrency(portfolioSummary.totalUnrealizedPnL)} 
+                  ({portfolioSummary.totalUnrealizedPnLPercent >= 0 ? '+' : ''}
+                  {portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%)
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ flex: 1 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <AccountBalanceIcon sx={{ mr: 1, color: 'warning.main' }} />
+                <Typography variant="h6">账户管理</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <AccountManagement compact />
+              </Box>
+            </CardContent>
+          </Card>
+        </Stack>
+      </Container>
+
       {/* 顶部状态栏 */}
       <Card sx={{ mb: 2, bgcolor: 'grey.900', color: 'white' }}>
         <CardContent sx={{ py: 1.5 }}>
@@ -1145,7 +1061,7 @@ export default function TradingPlatform() {
         open={tradeDialogOpen}
         onClose={() => setTradeDialogOpen(false)}
         stock={selectedStock}
-        onTrade={createOrder}
+        onTrade={handleTrade}
         userBalance={userBalance}
         formatCurrency={formatCurrency}
       />
