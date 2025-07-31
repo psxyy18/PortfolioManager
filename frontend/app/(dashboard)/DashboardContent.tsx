@@ -12,7 +12,7 @@ import Chip from '@mui/material/Chip';
 import Link from 'next/link';
 import StatCard, { StatCardProps } from '../components/StatCard';
 import PortfolioBubbleChart from '../components/PortfolioBubbleChart';
-import RevenueCalendarHeatmap from '../components/RevenueCalendarHeatmap';
+import SingleStockLineChart from '../components/SingleStockLineChart';
 import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
 
 export default function DashboardContent() {
@@ -71,11 +71,6 @@ export default function DashboardContent() {
   // 处理气泡图中股票的点击事件
   const handleStockSelect = (symbol: string | null) => {
     setSelectedStock(symbol);
-  };
-
-  // 处理清除选择
-  const handleClearSelection = () => {
-    setSelectedStock(null);
   };
 
   return (
@@ -150,13 +145,13 @@ export default function DashboardContent() {
               ))}
             </Grid>
             
-            {/* 图表区域：左边气泡图，右边收益走势日历 */}
+            {/* 图表区域：左边气泡图，右边单股收益走势 */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <PortfolioBubbleChart onStockSelect={handleStockSelect} selectedStock={selectedStock} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <RevenueCalendarHeatmap selectedStock={selectedStock} onClearSelection={handleClearSelection} />
+                <SingleStockLineChart selectedStock={selectedStock} />
               </Grid>
             </Grid>
             

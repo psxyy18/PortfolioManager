@@ -77,6 +77,9 @@ interface GlobalPortfolioContextType {
   getTotalPortfolioValue: () => number;
   getAvailableCash: () => number;
   
+  // 历史数据方法
+  getStockHistoricalData: (symbol: string) => Array<{date: string, price: number, volume: number}>;
+  
   // 加载状态
   isLoading: boolean;
   error: string | null;
@@ -116,11 +119,33 @@ const mockInitialStocks: MarketStock[] = [
     marketCap: 1750000000000,
     volume: 35678901,
     sector: 'Technology'
+  },
+  {
+    symbol: 'TSLA',
+    name: 'Tesla Inc.',
+    exchange: 'NASDAQ',
+    currentPrice: 248.42,
+    dailyChange: 8.67,
+    dailyChangePercent: 3.62,
+    marketCap: 790000000000,
+    volume: 98234567,
+    sector: 'Automotive'
+  },
+  {
+    symbol: 'NVDA',
+    name: 'NVIDIA Corporation',
+    exchange: 'NASDAQ',
+    currentPrice: 875.28,
+    dailyChange: -12.35,
+    dailyChangePercent: -1.39,
+    marketCap: 2150000000000,
+    volume: 45123456,
+    sector: 'Technology'
   }
 ];
 
 const initialUserBalance: UserBalance = {
-  cashBalance: 50000.00,
+  cashBalance: 25000.00,
   currency: 'USD'
 };
 
@@ -148,8 +173,80 @@ const initialUserHoldings: UserHolding[] = [
     unrealizedPnLPercent: ((378.85 - 385.20) / 385.20) * 100,
     todayPnL: 50 * (-1.45),
     todayPnLPercent: -0.38
+  },
+  {
+    stock: mockInitialStocks[2], // GOOGL
+    quantity: 75,
+    averageCost: 132.80,
+    purchaseDate: '2024-11-10',
+    currentValue: 75 * 140.35,
+    totalCost: 75 * 132.80,
+    unrealizedPnL: 75 * (140.35 - 132.80),
+    unrealizedPnLPercent: ((140.35 - 132.80) / 132.80) * 100,
+    todayPnL: 75 * 3.45,
+    todayPnLPercent: 2.52
+  },
+  {
+    stock: mockInitialStocks[3], // TSLA
+    quantity: 30,
+    averageCost: 235.60,
+    purchaseDate: '2024-11-20',
+    currentValue: 30 * 248.42,
+    totalCost: 30 * 235.60,
+    unrealizedPnL: 30 * (248.42 - 235.60),
+    unrealizedPnLPercent: ((248.42 - 235.60) / 235.60) * 100,
+    todayPnL: 30 * 8.67,
+    todayPnLPercent: 3.62
+  },
+  {
+    stock: mockInitialStocks[4], // NVDA
+    quantity: 15,
+    averageCost: 920.45,
+    purchaseDate: '2024-12-01',
+    currentValue: 15 * 875.28,
+    totalCost: 15 * 920.45,
+    unrealizedPnL: 15 * (875.28 - 920.45),
+    unrealizedPnLPercent: ((875.28 - 920.45) / 920.45) * 100,
+    todayPnL: 15 * (-12.35),
+    todayPnLPercent: -1.39
   }
 ];
+
+// 生成30日历史数据的函数
+const generateHistoricalData = (stock: MarketStock, days: number = 30) => {
+  const data = [];
+  const today = new Date();
+  
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    
+    // 模拟价格波动 (基于当前价格的随机波动)
+    const basePrice = stock.currentPrice;
+    const volatility = 0.03; // 3% 日波动率
+    const randomFactor = (Math.random() - 0.5) * 2 * volatility;
+    const dayPrice = basePrice * (1 + randomFactor - (i * 0.001)); // 轻微下降趋势
+    
+    data.push({
+      date: date.toISOString().split('T')[0],
+      price: Math.max(dayPrice, basePrice * 0.8), // 最低不超过当前价格的80%
+      volume: Math.floor(stock.volume * (0.5 + Math.random())),
+    });
+  }
+  
+  // 确保最后一天是当前价格
+  if (data.length > 0) {
+    data[data.length - 1].price = stock.currentPrice;
+  }
+  
+  return data;
+};
+
+// 为所有持股生成历史数据
+const stockHistoricalData = mockInitialStocks.reduce((acc, stock) => {
+  acc[stock.symbol] = generateHistoricalData(stock);
+  return acc;
+}, {} as Record<string, Array<{date: string, price: number, volume: number}>>);
 
 // Context 创建
 const GlobalPortfolioContext = createContext<GlobalPortfolioContextType | null>(null);
@@ -437,6 +534,11 @@ export const GlobalPortfolioProvider: React.FC<GlobalPortfolioProviderProps> = (
     return userBalance.cashBalance;
   }, [userBalance.cashBalance]);
 
+  // 获取股票历史数据
+  const getStockHistoricalData = useCallback((symbol: string) => {
+    return stockHistoricalData[symbol] || [];
+  }, []);
+
   // 当持仓或余额变化时重新计算摘要
   useEffect(() => {
     calculatePortfolioSummary();
@@ -461,6 +563,9 @@ export const GlobalPortfolioProvider: React.FC<GlobalPortfolioProviderProps> = (
     getStockHolding,
     getTotalPortfolioValue,
     getAvailableCash,
+    
+    // 历史数据方法
+    getStockHistoricalData,
     
     // 加载状态
     isLoading,
