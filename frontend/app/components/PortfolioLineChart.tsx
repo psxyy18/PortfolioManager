@@ -87,7 +87,7 @@ export default function PortfolioLineChart({ title = "投资组合走势" }: Por
           height: 300,
           color: 'text.secondary'
         }}>
-          <Typography>暂无该市场的投资数据</Typography>
+          <Typography>No investments in this market</Typography>
         </Box>
       );
     }

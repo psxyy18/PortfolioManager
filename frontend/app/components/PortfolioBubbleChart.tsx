@@ -47,7 +47,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function StockHoldingsBubbleChart({ 
-  title = "投资组合分布", 
+  title = "Portfolio Distribution", 
   onStockSelect,
   selectedStock 
 }: BubbleChartProps) {
@@ -104,7 +104,7 @@ export default function StockHoldingsBubbleChart({
           height: 200,
           color: 'text.secondary'
         }}>
-          <Typography>暂无该市场的投资</Typography>
+          <Typography>No investments in this market</Typography>
         </Box>
       );
     }
@@ -135,19 +135,19 @@ export default function StockHoldingsBubbleChart({
                     {holding.stock.name} ({holding.stock.symbol})
                   </Typography>
                   <Typography variant="body2">
-                    市值: ${holding.currentValue.toLocaleString()}
+                    Market Value: ${holding.currentValue.toLocaleString()}
                   </Typography>
                   <Typography variant="body2">
-                    收益率: {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(2)}%
+                    Return Percentage: {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(2)}%
                   </Typography>
                   <Typography variant="body2">
-                    持仓: {holding.quantity} 股
+                    Holding: {holding.quantity} shares
                   </Typography>
                   <Typography variant="body2">
-                    当前价格: ${holding.stock.currentPrice.toFixed(2)}
+                    Current Price: ${holding.stock.currentPrice.toFixed(2)}
                   </Typography>
                   <Typography variant="caption" color="primary">
-                    {isSelected ? '点击取消选中' : '点击查看详细走势'}
+                    {isSelected ? 'Click to Unselect' : 'Click to View Details'}
                   </Typography>
                 </Box>
               }
@@ -267,7 +267,7 @@ export default function StockHoldingsBubbleChart({
               borderRadius: '50%', 
               backgroundColor: '#4caf50' 
             }} />
-            <Typography variant="caption">盈利</Typography>
+            <Typography variant="caption">Profit</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{ 
@@ -276,7 +276,7 @@ export default function StockHoldingsBubbleChart({
               borderRadius: '50%', 
               backgroundColor: '#f44336' 
             }} />
-            <Typography variant="caption">亏损</Typography>
+            <Typography variant="caption">Loss</Typography>
           </Box>
           {/* <Typography variant="caption" color="text.secondary">
             气泡大小代表市值

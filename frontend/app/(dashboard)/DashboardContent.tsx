@@ -45,25 +45,25 @@ export default function DashboardContent() {
   // 基于实时状态生成统计卡片数据
   const data: StatCardProps[] = React.useMemo(() => [
     {
-      title: '今日收益',
+      title: 'Today\'s Gain',
       value: `${csvStats.dailyGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.dailyGain))}`,
-      interval: '今日表现',
+      interval: '',
       trend: csvStats.dailyGain >= 0 ? 'up' : 'down',
       trendValue: `${csvStats.dailyGainPercent >= 0 ? '+' : ''}${csvStats.dailyGainPercent.toFixed(2)}%`,
       data: [], // 取消折线图
     },
     {
-      title: '持仓收益',
+      title: 'Holding Gain (30 Days)',
       value: `${csvStats.holdingGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.holdingGain))}`,
-      interval: '30天持仓变化',
+      interval: '',
       trend: csvStats.holdingGainPercent >= 0 ? 'up' : 'down',
       trendValue: `${csvStats.holdingGainPercent >= 0 ? '+' : ''}${csvStats.holdingGainPercent.toFixed(2)}%`,
       data: csvStats.holdingGainData.map(item => Math.round(item.value * 100) / 100), // 确保数据为两位小数
     },
     {
-      title: '累计收益',
+      title: 'Cumulative Gain (30 Days)',
       value: `${csvStats.cumulativeGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.cumulativeGain))}`,
-      interval: '总投资回报',
+      interval: '',
       trend: csvStats.cumulativeGain >= 0 ? 'up' : 'down',
       trendValue: `${csvStats.cumulativeGainPercent >= 0 ? '+' : ''}${csvStats.cumulativeGainPercent.toFixed(2)}%`,
       data: csvStats.cumulativeGainData.map(item => item.value),
@@ -137,7 +137,7 @@ export default function DashboardContent() {
                       {formatCurrency(userBalance.cashBalance)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {((userBalance.cashBalance / (userBalance.cashBalance + portfolioSummary.totalValue)) * 100).toFixed(1)}% 现金占比
+                      {((userBalance.cashBalance / (userBalance.cashBalance + portfolioSummary.totalValue)) * 100).toFixed(1)}% Cash Allocation Percentage
                     </Typography>
                   </Box>
                 </Box>

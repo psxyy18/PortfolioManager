@@ -634,7 +634,7 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
                     borderRadius: 0.5 
                   }} 
                 />
-                <Typography variant="caption">盈利</Typography>
+                <Typography variant="caption">Profit</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box 
@@ -645,7 +645,7 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
                     borderRadius: 0.5 
                   }} 
                 />
-                <Typography variant="caption">亏损</Typography>
+                <Typography variant="caption">Loss</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box 
@@ -656,7 +656,7 @@ const RevenueCalendarHeatmap: React.FC<RevenueCalendarHeatmapProps> = ({ selecte
                     borderRadius: 0.5 
                   }} 
                 />
-                <Typography variant="caption">无交易</Typography>
+                <Typography variant="caption">No Trade</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box 

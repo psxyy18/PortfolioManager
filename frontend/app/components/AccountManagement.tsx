@@ -107,36 +107,37 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
           </Typography> */}
         </Box>
         
-        <Tooltip title="存款">
-          <IconButton 
-            color="success" 
-            size="small"
-            onClick={() => setDepositDialogOpen(true)}
-          >
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
-        
-        <Tooltip title="提现">
-          <IconButton 
-            color="error" 
-            size="small"
-            onClick={() => setWithdrawDialogOpen(true)}
-          >
-            <RemoveIcon />
-          </IconButton>
-        </Tooltip>
-        
-        <Tooltip title="刷新数据">
-          <IconButton 
-            color="primary" 
-            size="small"
-            onClick={refreshPortfolio}
-            disabled={isLoading}
-          >
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
+        <Tooltip title="Deposit">
+  <IconButton 
+    color="success" 
+    size="small"
+    onClick={() => setDepositDialogOpen(true)}
+  >
+    <AddIcon />
+  </IconButton>
+</Tooltip>
+
+<Tooltip title="Withdraw">
+  <IconButton 
+    color="error" 
+    size="small"
+    onClick={() => setWithdrawDialogOpen(true)}
+  >
+    <RemoveIcon />
+  </IconButton>
+</Tooltip>
+
+<Tooltip title="Refresh Data">
+  <IconButton 
+    color="primary" 
+    size="small"
+    onClick={refreshPortfolio}
+    disabled={isLoading}
+  >
+    <RefreshIcon />
+  </IconButton>
+</Tooltip>
+
 
         {/* 对话框保持不变 */}
         {renderDialogs()}
@@ -145,243 +146,243 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
   }
 
   function renderDialogs() {
-    return (
-      <>
-        {/* 存款对话框 */}
-        <Dialog open={depositDialogOpen} onClose={() => setDepositDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>存入资金</DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              {actionError && (
-                <Alert severity="error" onClose={() => setActionError(null)}>
-                  {actionError}
-                </Alert>
-              )}
-              
-              <TextField
-                label="存入金额"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                fullWidth
-                inputProps={{ min: 0, step: 0.01 }}
-                placeholder="请输入存入金额"
-              />
-              
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  快速选择:
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {quickAmounts.map((quickAmount) => (
-                    <Chip
-                      key={quickAmount}
-                      label={formatCurrency(quickAmount)}
-                      onClick={() => setAmount(quickAmount.toString())}
-                      variant="outlined"
-                      size="small"
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDepositDialogOpen(false)}>取消</Button>
-            <Button 
-              onClick={handleDeposit} 
-              variant="contained" 
-              color="success"
-              disabled={!amount || parseFloat(amount) <= 0}
-            >
-              确认存入
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* 提现对话框 */}
-        <Dialog open={withdrawDialogOpen} onClose={() => setWithdrawDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>提取资金</DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              {actionError && (
-                <Alert severity="error" onClose={() => setActionError(null)}>
-                  {actionError}
-                </Alert>
-              )}
-              
-              <Alert severity="info">
-                当前可用余额: {formatCurrency(userBalance.cashBalance)}
-              </Alert>
-              
-              <TextField
-                label="提现金额"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                fullWidth
-                inputProps={{ min: 0, max: userBalance.cashBalance, step: 0.01 }}
-                placeholder="请输入提现金额"
-              />
-              
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  快速选择:
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {quickAmounts
-                    .filter(amount => amount <= userBalance.cashBalance)
-                    .map((quickAmount) => (
-                    <Chip
-                      key={quickAmount}
-                      label={formatCurrency(quickAmount)}
-                      onClick={() => setAmount(quickAmount.toString())}
-                      variant="outlined"
-                      size="small"
-                    />
-                  ))}
-                  {userBalance.cashBalance > 0 && (
-                    <Chip
-                      label="全部提现"
-                      onClick={() => setAmount(userBalance.cashBalance.toString())}
-                      variant="outlined"
-                      size="small"
-                      color="error"
-                    />
-                  )}
-                </Stack>
-              </Box>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setWithdrawDialogOpen(false)}>取消</Button>
-            <Button 
-              onClick={handleWithdraw} 
-              variant="contained" 
-              color="error"
-              disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > userBalance.cashBalance}
-            >
-              确认提现
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </>
-    );
-  }
-
   return (
-    <Card>
-      <CardContent>
-        {showTitle && (
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AccountBalanceIcon color="primary" />
-            账户管理
-          </Typography>
-        )}
+    <>
+      {/* Deposit Dialog */}
+      <Dialog open={depositDialogOpen} onClose={() => setDepositDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Deposit Funds</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {actionError && (
+              <Alert severity="error" onClose={() => setActionError(null)}>
+                {actionError}
+              </Alert>
+            )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+            <TextField
+              label="Deposit Amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              fullWidth
+              inputProps={{ min: 0, step: 0.01 }}
+              placeholder="Enter deposit amount"
+            />
 
-        {/* 账户余额展示 */}
-        <Box sx={{ mb: 3 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              可用现金
-            </Typography>
-            <Tooltip title="刷新数据">
-              <IconButton 
-                size="small" 
-                onClick={refreshPortfolio}
-                disabled={isLoading}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Quick Select:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {quickAmounts.map((quickAmount) => (
+                  <Chip
+                    key={quickAmount}
+                    label={formatCurrency(quickAmount)}
+                    onClick={() => setAmount(quickAmount.toString())}
+                    variant="outlined"
+                    size="small"
+                  />
+                ))}
+              </Stack>
+            </Box>
           </Stack>
-          
-          <Typography variant="h4" fontWeight="bold" color="primary.main">
-            {formatCurrency(userBalance.cashBalance)}
-          </Typography>
-          
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            总资产: {formatCurrency(portfolioSummary.totalAssets)}
-          </Typography>
-        </Box>
-
-        {/* 操作按钮 */}
-        <Stack direction="row" spacing={2}>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepositDialogOpen(false)}>Cancel</Button>
           <Button
+            onClick={handleDeposit}
             variant="contained"
             color="success"
-            startIcon={<AddIcon />}
-            onClick={() => setDepositDialogOpen(true)}
-            fullWidth
+            disabled={!amount || parseFloat(amount) <= 0}
           >
-            存入资金
+            Confirm Deposit
           </Button>
-          
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<RemoveIcon />}
-            onClick={() => setWithdrawDialogOpen(true)}
-            disabled={userBalance.cashBalance <= 0}
-            fullWidth
-          >
-            提取资金
-          </Button>
-        </Stack>
+        </DialogActions>
+      </Dialog>
 
-        {/* 投资组合摘要 */}
-        <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            投资组合摘要
-          </Typography>
-          
-          <Stack spacing={1}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2">持仓市值</Typography>
-              <Typography variant="body2" fontWeight="medium">
-                {formatCurrency(portfolioSummary.totalValue)}
+      {/* Withdraw Dialog */}
+      <Dialog open={withdrawDialogOpen} onClose={() => setWithdrawDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Withdraw Funds</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {actionError && (
+              <Alert severity="error" onClose={() => setActionError(null)}>
+                {actionError}
+              </Alert>
+            )}
+
+            <Alert severity="info">
+              Available Balance: {formatCurrency(userBalance.cashBalance)}
+            </Alert>
+
+            <TextField
+              label="Withdrawal Amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              fullWidth
+              inputProps={{ min: 0, max: userBalance.cashBalance, step: 0.01 }}
+              placeholder="Enter withdrawal amount"
+            />
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Quick Select:
               </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2">总盈亏</Typography>
-              <Typography 
-                variant="body2" 
-                fontWeight="medium"
-                color={portfolioSummary.totalUnrealizedPnL >= 0 ? 'success.main' : 'error.main'}
-              >
-                {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}
-                {formatCurrency(portfolioSummary.totalUnrealizedPnL)}
-                ({portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%)
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2">今日盈亏</Typography>
-              <Typography 
-                variant="body2" 
-                fontWeight="medium"
-                color={portfolioSummary.todayTotalPnL >= 0 ? 'success.main' : 'error.main'}
-              >
-                {portfolioSummary.todayTotalPnL >= 0 ? '+' : ''}
-                {formatCurrency(portfolioSummary.todayTotalPnL)}
-                ({portfolioSummary.todayTotalPnLPercent.toFixed(2)}%)
-              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {quickAmounts
+                  .filter(amount => amount <= userBalance.cashBalance)
+                  .map((quickAmount) => (
+                    <Chip
+                      key={quickAmount}
+                      label={formatCurrency(quickAmount)}
+                      onClick={() => setAmount(quickAmount.toString())}
+                      variant="outlined"
+                      size="small"
+                    />
+                  ))}
+                {userBalance.cashBalance > 0 && (
+                  <Chip
+                    label="Withdraw All"
+                    onClick={() => setAmount(userBalance.cashBalance.toString())}
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                  />
+                )}
+              </Stack>
             </Box>
           </Stack>
-        </Box>
-
-        {/* 对话框 */}
-        {renderDialogs()}
-      </CardContent>
-    </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWithdrawDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleWithdraw}
+            variant="contained"
+            color="error"
+            disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > userBalance.cashBalance}
+          >
+            Confirm Withdrawal
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
-};
+}
+
+return (
+  <Card>
+    <CardContent>
+      {showTitle && (
+        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccountBalanceIcon color="primary" />
+          Account Management
+        </Typography>
+      )}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Balance Section */}
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Available Cash
+          </Typography>
+          <Tooltip title="Refresh Data">
+            <IconButton
+              size="small"
+              onClick={refreshPortfolio}
+              disabled={isLoading}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+
+        <Typography variant="h4" fontWeight="bold" color="primary.main">
+          {formatCurrency(userBalance.cashBalance)}
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Total Assets: {formatCurrency(portfolioSummary.totalAssets)}
+        </Typography>
+      </Box>
+
+      {/* Action Buttons */}
+      <Stack direction="row" spacing={2}>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<AddIcon />}
+          onClick={() => setDepositDialogOpen(true)}
+          fullWidth
+        >
+          Deposit
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<RemoveIcon />}
+          onClick={() => setWithdrawDialogOpen(true)}
+          disabled={userBalance.cashBalance <= 0}
+          fullWidth
+        >
+          Withdraw
+        </Button>
+      </Stack>
+
+      {/* Portfolio Summary */}
+      <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          Portfolio Summary
+        </Typography>
+
+        <Stack spacing={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="body2">Market Value</Typography>
+            <Typography variant="body2" fontWeight="medium">
+              {formatCurrency(portfolioSummary.totalValue)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="body2">Total P&L</Typography>
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              color={portfolioSummary.totalUnrealizedPnL >= 0 ? 'success.main' : 'error.main'}
+            >
+              {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}
+              {formatCurrency(portfolioSummary.totalUnrealizedPnL)}
+              ({portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%)
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="body2">Today's P&L</Typography>
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              color={portfolioSummary.todayTotalPnL >= 0 ? 'success.main' : 'error.main'}
+            >
+              {portfolioSummary.todayTotalPnL >= 0 ? '+' : ''}
+              {formatCurrency(portfolioSummary.todayTotalPnL)}
+              ({portfolioSummary.todayTotalPnLPercent.toFixed(2)}%)
+            </Typography>
+          </Box>
+        </Stack>
+      </Box>
+
+      {/* Dialogs */}
+      {renderDialogs()}
+    </CardContent>
+  </Card>
+);
+}
 
 export default AccountManagement;

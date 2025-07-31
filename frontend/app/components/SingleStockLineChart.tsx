@@ -17,7 +17,7 @@ interface SingleStockLineChartProps {
 
 export default function SingleStockLineChart({ 
   selectedStock, 
-  title = "股票收益走势" 
+  title = "Stock Performance Trend" 
 }: SingleStockLineChartProps) {
   const { getStockHistoricalData, userHoldings } = useGlobalPortfolio();
 
@@ -61,7 +61,7 @@ export default function SingleStockLineChart({
             height: 300,
             color: 'text.secondary'
           }}>
-            <Typography>请在投资组合分布中点击气泡选择股票</Typography>
+            <Typography>Please click a bubble in the Portfolio Distribution to select a stock</Typography>
           </Box>
         </CardContent>
       </Card>
@@ -114,7 +114,7 @@ export default function SingleStockLineChart({
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {stockInfo.name} • 成本基础: ${holding?.averageCost.toFixed(2) || stockInfo.currentPrice.toFixed(2)}
+          {stockInfo.name} • Cost Basis: ${holding?.averageCost.toFixed(2) || stockInfo.currentPrice.toFixed(2)}
         </Typography>
 
         <Box sx={{ width: '100%', height: 300 }}>
@@ -152,7 +152,7 @@ export default function SingleStockLineChart({
             series={[
               {
                 id: 'return',
-                label: '收益率',
+                label: 'Return Percentage',
                 data: returnData.map(d => d.returnPercent),
                 color: '#1976d2', // 蓝色
                 curve: 'linear',
@@ -211,10 +211,10 @@ export default function SingleStockLineChart({
           borderColor: 'divider'
         }}>
           <Typography variant="caption" color="text.secondary">
-            30天收益走势
+            30-Day Return Trend
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            持仓: {holding?.quantity || 0} 股
+            Holding: {holding?.quantity || 0} shares
           </Typography>
         </Box>
       </CardContent>

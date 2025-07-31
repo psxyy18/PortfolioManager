@@ -22,7 +22,7 @@ const providers: Provider[] = [
       if (c.password === 'starvest' && c.email === 'starvest@gmail.com') {
         return {
           id: 'test',
-          name: 'starvest',
+          name: 'Starvester',
           email: String(c.email),
         };
       }

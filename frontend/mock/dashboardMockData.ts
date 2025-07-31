@@ -133,9 +133,9 @@ export const currentHoldings: StockHolding[] = [
 
 // 市场标签
 export const marketTabs: MarketTab[] = [
-  { id: 'US', name: '美股', icon: '🇺🇸' },
-  { id: 'CN', name: '沪深', icon: '🇨🇳' },
-  { id: 'HK', name: '港股', icon: '🇭🇰' }
+  { id: 'US', name: 'US Stocks', icon: '🇺🇸' },
+  { id: 'CN', name: 'A-Shares', icon: '🇨🇳' },
+  { id: 'HK', name: 'HK Stocks', icon: '🇭🇰' }
 ];
 
 // 生成最近30天的价格数据
