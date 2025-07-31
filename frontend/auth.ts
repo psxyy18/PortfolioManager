@@ -19,10 +19,10 @@ const providers: Provider[] = [
       password: { label: 'Password', type: 'password' },
     },
     authorize(c) {
-      if (c.password === '@demo1' && c.email === 'user@gmail.com') {
+      if (c.password === 'starvest' && c.email === 'starvest@gmail.com') {
         return {
           id: 'test',
-          name: 'User',
+          name: 'starvest',
           email: String(c.email),
         };
       }

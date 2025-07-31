@@ -109,7 +109,7 @@ export default function DashboardContent() {
                 }}>
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      投资组合总览
+                      Portfolio Overview
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, flexWrap: 'wrap' }}>
                       <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
@@ -131,7 +131,7 @@ export default function DashboardContent() {
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      可用现金
+                      Cash
                     </Typography>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'medium' }}>
                       {formatCurrency(userBalance.cashBalance)}

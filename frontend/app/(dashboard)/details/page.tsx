@@ -5,7 +5,7 @@ import TradingPlatform from '../../components/TradingPlatform';
 
 export default function DetailsPage() {
   return (
-    <PageContainer title="Trading Platform">
+    <PageContainer title="">
       <TradingPlatform />
     </PageContainer>
   );

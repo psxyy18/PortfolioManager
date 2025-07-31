@@ -229,7 +229,7 @@ export default function TradingPlatform() {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <AccountBalanceWallet sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="h6">可用现金</Typography>
+                <Typography variant="h6">Cash</Typography>
               </Box>
               <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(userBalance.cashBalance)}
@@ -315,7 +315,7 @@ export default function TradingPlatform() {
             </Stack>
 
             <Stack direction="row" spacing={1} alignItems="center">
-              <FormControlLabel
+              {/* <FormControlLabel
                 control={
                   <Switch
                     checked={isRealTime}
@@ -325,7 +325,7 @@ export default function TradingPlatform() {
                 }
                 label="实时行情"
                 sx={{ color: 'white', m: 0 }}
-              />
+              /> */}
               
               <IconButton 
                 onClick={() => setLastUpdate(new Date())} 

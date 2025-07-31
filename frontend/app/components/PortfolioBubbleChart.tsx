@@ -278,9 +278,9 @@ export default function StockHoldingsBubbleChart({
             }} />
             <Typography variant="caption">亏损</Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">
+          {/* <Typography variant="caption" color="text.secondary">
             气泡大小代表市值
-          </Typography>
+          </Typography> */}
         </Box>
       </CardContent>
     </Card>

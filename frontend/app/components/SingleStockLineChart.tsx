@@ -136,10 +136,17 @@ export default function SingleStockLineChart({
               {
                 id: 'return',
                 label: '',
-                valueFormatter: (value: number) => `${value.toFixed(1)}%`,
+                valueFormatter: (value: number) => `${value.toFixed(1)}`,
                 hideTooltip: false,
                 disableLine: true,
                 disableTicks: false,
+                min: undefined, // 让图表自动计算最小值
+                max: undefined, // 让图表自动计算最大值
+                tickLabelStyle: {
+                  fontSize: 11, // 稍微减小字体
+                  textAnchor: 'end',
+                  fontFamily: 'monospace', // 使用等宽字体确保对齐
+                },
               },
             ]}
             series={[
@@ -157,7 +164,7 @@ export default function SingleStockLineChart({
             ]}
             width={undefined}
             height={300}
-            margin={{ left: 60, right: 20, top: 20, bottom: 40 }}
+            margin={{ left: 10, right: 10, top: 30, bottom: 50 }}
             grid={{ horizontal: false, vertical: false }}
             sx={{
               '& .MuiLineElement-root': {
@@ -178,10 +185,18 @@ export default function SingleStockLineChart({
                 },
                 '& .MuiChartsAxis-tickLabel': {
                   display: 'block', // 显示刻度标签（数字和日期）
+                  fontSize: '12px', // 确保字体大小合适
+                  fill: 'currentColor', // 使用当前文字颜色
                 },
                 '& .MuiChartsAxis-label': {
                   display: 'none', // 隐藏轴标签
                 },
+              },
+              // 确保图表容器不会溢出
+              overflow: 'visible',
+              // 确保 SVG 不会裁剪内容
+              '& svg': {
+                overflow: 'visible',
               },
             }}
           />

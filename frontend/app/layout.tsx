@@ -24,7 +24,7 @@ const NAVIGATION: Navigation = [
   },
   {
     segment: 'details',
-    title: 'Market Trade',
+    title: 'Trading Platform',
     icon: <TrendingUpIcon />,
   },
   // {

@@ -41,7 +41,7 @@ export default function SignIn() {
       slots={{
         forgotPasswordLink: ForgotPasswordLink,
         signUpLink: SignUpLink,
-        subtitle: DemoInfo,
+        // subtitle: DemoInfo,
       }}
     />
   );
