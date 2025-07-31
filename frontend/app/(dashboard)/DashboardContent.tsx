@@ -112,17 +112,20 @@ export default function DashboardContent() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, flexWrap: 'wrap' }}>
                       <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
-                        {formatCurrency(csvStats.currentPortfolioValue)}
+                        {formatCurrency(portfolioSummary.totalAssets)}
                       </Typography>
                       <Chip
-                        label={`${csvStats.totalReturnPercent >= 0 ? '+' : ''}${csvStats.totalReturnPercent.toFixed(2)}%`}
-                        color={csvStats.totalReturnPercent >= 0 ? "success" : "error"}
+                        label={`${portfolioSummary.totalUnrealizedPnLPercent >= 0 ? '+' : ''}${portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%`}
+                        color={portfolioSummary.totalUnrealizedPnLPercent >= 0 ? "success" : "error"}
                         variant="outlined"
                         sx={{ fontSize: '1rem', height: '32px' }}
                       />
                     </Box>
+                    {/* <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      总资产 • 总收益 {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.totalUnrealizedPnL)} • 实时数据
+                    </Typography> */}
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      总资产 • 总收益 {csvStats.totalReturn >= 0 ? '+' : ''}{formatCurrency(csvStats.totalReturn)} • 30天表现
+                      持仓 {formatCurrency(portfolioSummary.totalValue)} + 现金 {formatCurrency(userBalance.cashBalance)} • 总收益 {portfolioSummary.totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(portfolioSummary.totalUnrealizedPnL)}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
@@ -131,6 +134,9 @@ export default function DashboardContent() {
                     </Typography>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'medium' }}>
                       {formatCurrency(userBalance.cashBalance)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {((userBalance.cashBalance / (userBalance.cashBalance + portfolioSummary.totalValue)) * 100).toFixed(1)}% 现金占比
                     </Typography>
                   </Box>
                 </Box>

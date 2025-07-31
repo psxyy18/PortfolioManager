@@ -20,7 +20,7 @@ export type StatCardProps = {
 
 function getDaysInMonth(month: number, year: number) {
   const date = new Date(year, month, 0);
-  const monthName = date.toLocaleDateString('en-US', {
+  const monthName = date.toLocaleDateString('zh-CN', {
     month: 'short',
   });
   const daysInMonth = date.getDate();
@@ -31,6 +31,14 @@ function getDaysInMonth(month: number, year: number) {
     i += 1;
   }
   return days;
+}
+
+// 获取当前月份的日期
+function getCurrentMonthDays() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // getMonth() 返回 0-11，所以需要 +1
+  const currentYear = now.getFullYear();
+  return getDaysInMonth(currentMonth, currentYear);
 }
 
 function AreaGradient({ color, id }: { color: string; id: string }) {
@@ -46,7 +54,7 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
 
 export default function StatCard({ title, value, interval, trend, data, trendValue }: StatCardProps) {
   const theme = useTheme();
-  const daysInWeek = getDaysInMonth(4, 2024);
+  const daysInWeek = getCurrentMonthDays();
 
   const trendColors = {
     up: theme.palette.mode === 'light' ? theme.palette.success.main : theme.palette.success.dark,
@@ -62,7 +70,7 @@ export default function StatCard({ title, value, interval, trend, data, trendVal
 
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
-  const trendValues = { up: '+25%', down: '-25%', neutral: '+5%' };
+  const trendValues = { up: '+25.00%', down: '-25.00%', neutral: '+5.00%' };
   
   // 使用传入的trendValue或默认的placeholder值
   const displayTrendValue = trendValue || trendValues[trend];

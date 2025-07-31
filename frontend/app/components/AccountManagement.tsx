@@ -98,13 +98,13 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AccountBalanceIcon sx={{ color: 'primary.main' }} />
-          <Typography variant="h6" fontWeight="bold">
+          {/* <AccountBalanceIcon sx={{ color: 'primary.main' }} /> */}
+          {/* <Typography variant="h6" fontWeight="bold">
             {formatCurrency(userBalance.cashBalance)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+          </Typography> */}
+          {/* <Typography variant="body2" color="text.secondary">
             可用资金
-          </Typography>
+          </Typography> */}
         </Box>
         
         <Tooltip title="存款">

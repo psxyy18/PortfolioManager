@@ -8,6 +8,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Navigation, Branding } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
+import Image from 'next/image';
 import theme from '../theme';
 import { auth } from '../auth';
 import { GlobalPortfolioProvider } from '../contexts/GlobalPortfolioContext';
@@ -26,11 +27,11 @@ const NAVIGATION: Navigation = [
     title: 'Market Trade',
     icon: <TrendingUpIcon />,
   },
-  {
-    segment: 'data-test',
-    title: 'Portfolio Data',
-    icon: <BugReportIcon />,
-  },
+  // {
+  //   segment: 'data-test',
+  //   title: 'Portfolio Data',
+  //   icon: <BugReportIcon />,
+  // },
 ];
 
 const AUTHENTICATION = {
@@ -39,8 +40,16 @@ const AUTHENTICATION = {
 };
 
 const BRANDING: Branding = {
-  logo: <AttachMoneyIcon />,
-  title: 'Portfolio Manager',
+  logo: (
+    <Image
+      src="/icon.png"
+      alt="Portfolio Manager Logo"
+      width={32}
+      height={32}
+      style={{ borderRadius: '4px' }}
+    />
+  ),
+  title: 'STARVEST',
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

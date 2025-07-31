@@ -69,7 +69,7 @@ import {
   type UserHolding,
   type PortfolioSummary
 } from '../../mock/marketMockData';
-import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { useGlobalPortfolio, type TradingOrder } from '../../contexts/GlobalPortfolioContext';
 import AccountManagement from './AccountManagement';
 
 // 更专业的接口定义
@@ -83,18 +83,6 @@ interface WatchlistStock {
   stopLoss?: number;
 }
 
-interface TradingOrder {
-  id: string;
-  stock: MarketStock;
-  type: 'market' | 'limit' | 'stop';
-  side: 'buy' | 'sell';
-  quantity: number;
-  price?: number;
-  status: 'pending' | 'filled' | 'cancelled';
-  createdAt: string;
-  filledAt?: string;
-}
-
 interface MarketTicker {
   symbol: string;
   price: number;
@@ -106,11 +94,10 @@ interface MarketTicker {
 
 export default function TradingPlatform() {
   // 使用全局状态
-  const { userBalance, userHoldings, portfolioSummary, executeOrder, addCash, withdrawCash } = useGlobalPortfolio();
+  const { userBalance, userHoldings, portfolioSummary, orders, executeOrder, addCash, withdrawCash } = useGlobalPortfolio();
   
   // 核心状态
   const [watchlist, setWatchlist] = useState<WatchlistStock[]>([]);
-  const [orders, setOrders] = useState<TradingOrder[]>([]);
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedStock, setSelectedStock] = useState<MarketStock | null>(null);
   
@@ -247,9 +234,9 @@ export default function TradingPlatform() {
               <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(userBalance.cashBalance)}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {/* <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 可用于新的投资和交易
-              </Typography>
+              </Typography> */}
             </CardContent>
           </Card>
 
@@ -262,13 +249,13 @@ export default function TradingPlatform() {
               <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(portfolioSummary.totalAssets)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                {portfolioSummary.totalUnrealizedPnL >= 0 ? (
+              {/* <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}> */}
+                {/* {portfolioSummary.totalUnrealizedPnL >= 0 ? (
                   <TrendingUpIcon sx={{ color: 'success.main', fontSize: 16, mr: 0.5 }} />
                 ) : (
                   <TrendingDownIcon sx={{ color: 'error.main', fontSize: 16, mr: 0.5 }} />
-                )}
-                <Typography 
+                )} */}
+                {/* <Typography 
                   variant="body2" 
                   color={portfolioSummary.totalUnrealizedPnL >= 0 ? 'success.main' : 'error.main'}
                 >
@@ -276,8 +263,8 @@ export default function TradingPlatform() {
                   {formatCurrency(portfolioSummary.totalUnrealizedPnL)} 
                   ({portfolioSummary.totalUnrealizedPnLPercent >= 0 ? '+' : ''}
                   {portfolioSummary.totalUnrealizedPnLPercent.toFixed(2)}%)
-                </Typography>
-              </Box>
+                </Typography> */}
+              {/* </Box> */}
             </CardContent>
           </Card>
 
@@ -709,20 +696,20 @@ export default function TradingPlatform() {
                         </TableCell>
                         <TableCell align="right">{order.quantity}</TableCell>
                         <TableCell align="right">
-                          {order.price ? formatCurrency(order.price) : '市价'}
+                          {formatCurrency(order.orderPrice)}
                         </TableCell>
                         <TableCell>
                           <Chip
                             label={order.status === 'pending' ? '待成交' : 
-                                   order.status === 'filled' ? '已成交' : '已取消'}
-                            color={order.status === 'filled' ? 'success' : 
+                                   order.status === 'completed' ? '已成交' : '已取消'}
+                            color={order.status === 'completed' ? 'success' : 
                                    order.status === 'pending' ? 'warning' : 'default'}
                             size="small"
                           />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2">
-                            {new Date(order.createdAt).toLocaleString()}
+                            {new Date(order.orderTime).toLocaleString()}
                           </Typography>
                         </TableCell>
                       </TableRow>
