@@ -20,7 +20,7 @@ export type StatCardProps = {
 
 function getDaysInMonth(month: number, year: number) {
   const date = new Date(year, month, 0);
-  const monthName = date.toLocaleDateString('zh-CN', {
+  const monthName = date.toLocaleDateString('en-US', {
     month: 'short',
   });
   const daysInMonth = date.getDate();

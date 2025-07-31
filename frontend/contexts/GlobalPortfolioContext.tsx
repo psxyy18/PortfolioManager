@@ -216,6 +216,7 @@ const initialUserHoldings: UserHolding[] = [
 const generateHistoricalData = (stock: MarketStock, days: number = 30) => {
   const data = [];
   const today = new Date();
+  today.setDate(today.getDate() - 1);
   
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);

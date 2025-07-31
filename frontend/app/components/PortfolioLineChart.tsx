@@ -110,7 +110,9 @@ export default function PortfolioLineChart({ title = "投资组合走势" }: Por
               data: dates,
               scaleType: 'time',
               valueFormatter: (date: Date) => {
-                return `${date.getMonth() + 1}/${date.getDate()}`;
+                // return `${date.getMonth() + 1}/${date.getDate()}`;
+                  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+
               },
             },
           ]}
