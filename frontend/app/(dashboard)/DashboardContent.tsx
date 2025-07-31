@@ -13,6 +13,7 @@ import Link from 'next/link';
 import StatCard, { StatCardProps } from '../components/StatCard';
 import PortfolioBubbleChart from '../components/PortfolioBubbleChart';
 import SingleStockLineChart from '../components/SingleStockLineChart';
+import RevenueCalendarHeatmap from '../components/RevenueCalendarHeatmap';
 import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
 import { calculatePortfolioStats } from '../../data/portfolioData';
 
@@ -161,6 +162,12 @@ export default function DashboardContent() {
                 <SingleStockLineChart selectedStock={selectedStock} />
               </Grid>
             </Grid>
+            
+            {/* 收益走势日历热力图 */}
+            <Box sx={{ mb: 3 }}>
+              <RevenueCalendarHeatmap selectedStock={selectedStock} onClearSelection={() => setSelectedStock(null)} />
+            </Box>
+            
             
             {/* Development Test Links */}
             {/* <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 1 }}>
