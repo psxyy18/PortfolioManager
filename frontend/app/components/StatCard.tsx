@@ -36,7 +36,7 @@ function getDaysInMonth(month: number, year: number) {
 // 获取当前月份的日期
 function getCurrentMonthDays() {
   const now = new Date();
-  const currentMonth = now.getMonth() + 1; // getMonth() 返回 0-11，所以需要 +1
+  const currentMonth = now.getMonth(); // getMonth() 返回 0-11，所以需要 +1
   const currentYear = now.getFullYear();
   return getDaysInMonth(currentMonth, currentYear);
 }
