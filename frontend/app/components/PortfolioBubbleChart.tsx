@@ -8,11 +8,12 @@ import {
   Tabs, 
   Tab,
   Tooltip,
-  Chip
+  Chip,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { marketTabs, MarketTab } from '../../mock/dashboardMockData';
-import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
-import { UserHolding } from '../../contexts/GlobalPortfolioContext';
+import { usePortfolioData } from '../../hooks/usePortfolioData';
 
 interface BubbleChartProps {
   title?: string;
@@ -46,31 +47,32 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export default function StockHoldingsBubbleChart({ 
+export default function PortfolioBubbleChart({ 
   title = "Portfolio Distribution", 
   onStockSelect,
   selectedStock 
 }: BubbleChartProps) {
   const [selectedMarket, setSelectedMarket] = React.useState(0);
-  const { userHoldings } = useGlobalPortfolio();
+  const { data, loading, error } = usePortfolioData();
 
   const handleMarketChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedMarket(newValue);
   };
 
-  const getFilteredHoldings = (marketId: string): UserHolding[] => {
-    return userHoldings.filter(holding => {
-      const symbol = holding.stock.symbol;
+  const getFilteredHoldings = (marketId: string) => {
+    if (!data?.holdings) return [];
+    
+    return data.holdings.filter(holding => {
+      const symbol = holding.ticker_symbol;
       
       if (marketId === 'US') {
-        // 美股：包含实际持仓的美股代码
-        const usStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM'];
-        return usStocks.includes(symbol);
+        // US stocks: show all stocks that don't have .HK, .SS, or .SZ (which are other markets)
+        return !symbol.includes('.HK') && !symbol.includes('.SS') && !symbol.includes('.SZ');
       } else if (marketId === 'HK') {
-        // 港股：以数字开头并包含.HK
+        // HK stocks: symbols containing .HK
         return symbol.includes('.HK');
       } else if (marketId === 'CN') {
-        // A股：6位数字开头，包含.SS或.SZ
+        // CN stocks: symbols containing .SS or .SZ
         return symbol.includes('.SS') || symbol.includes('.SZ');
       }
       return false;
@@ -94,7 +96,7 @@ export default function StockHoldingsBubbleChart({
     }
   };
 
-  const renderBubbles = (holdings: UserHolding[]) => {
+  const renderBubbles = (holdings: any[]) => {
     if (holdings.length === 0) {
       return (
         <Box sx={{ 
@@ -109,7 +111,7 @@ export default function StockHoldingsBubbleChart({
       );
     }
 
-    const maxValue = Math.max(...holdings.map(h => h.currentValue));
+    const maxValue = Math.max(...holdings.map(h => h.current_value || 0));
     
     return (
       <Box sx={{ 
@@ -122,29 +124,29 @@ export default function StockHoldingsBubbleChart({
         p: 2
       }}>
         {holdings.map((holding) => {
-          const size = calculateBubbleSize(holding.currentValue, maxValue);
-          const color = getBubbleColor(holding.unrealizedPnLPercent);
-          const isSelected = selectedStock === holding.stock.symbol;
+          const size = calculateBubbleSize(holding.current_value || 0, maxValue);
+          const color = getBubbleColor(holding.gain_loss_percentage || 0);
+          const isSelected = selectedStock === holding.ticker_symbol;
           
           return (
             <Tooltip
-              key={holding.stock.symbol}
+              key={holding.ticker_symbol}
               title={
                 <Box>
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {holding.stock.name} ({holding.stock.symbol})
+                    {holding.company_name} ({holding.ticker_symbol})
                   </Typography>
                   <Typography variant="body2">
-                    Market Value: ${holding.currentValue.toLocaleString()}
+                    Market Value: ${(holding.current_value || 0).toLocaleString()}
                   </Typography>
                   <Typography variant="body2">
-                    Return Percentage: {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(2)}%
+                    Return Percentage: {(holding.gain_loss_percentage || 0) > 0 ? '+' : ''}{(holding.gain_loss_percentage || 0).toFixed(2)}%
                   </Typography>
                   <Typography variant="body2">
-                    Holding: {holding.quantity} shares
+                    Holding: {holding.holding_shares} shares
                   </Typography>
                   <Typography variant="body2">
-                    Current Price: ${holding.stock.currentPrice.toFixed(2)}
+                    Current Price: ${(holding.current_price || 0).toFixed(2)}
                   </Typography>
                   <Typography variant="caption" color="primary">
                     {isSelected ? 'Click to Unselect' : 'Click to View Details'}
@@ -154,11 +156,10 @@ export default function StockHoldingsBubbleChart({
             >
               <Box
                 onClick={() => {
-                  // 如果当前股票已被选中，则取消选中；否则选中
                   if (isSelected) {
                     onStockSelect?.(null);
                   } else {
-                    onStockSelect?.(holding.stock.symbol);
+                    onStockSelect?.(holding.ticker_symbol);
                   }
                 }}
                 sx={{
@@ -194,13 +195,13 @@ export default function StockHoldingsBubbleChart({
                     lineHeight: 1,
                     mb: 0.5
                   }}>
-                    {holding.stock.symbol.length > 6 ? holding.stock.symbol.substring(0, 6) : holding.stock.symbol}
+                    {holding.ticker_symbol.length > 6 ? holding.ticker_symbol.substring(0, 6) : holding.ticker_symbol}
                   </Typography>
                   <Typography variant="caption" sx={{ 
                     fontSize: 'inherit',
                     lineHeight: 1
                   }}>
-                    {holding.unrealizedPnLPercent > 0 ? '+' : ''}{holding.unrealizedPnLPercent.toFixed(1)}%
+                    {(holding.gain_loss_percentage || 0) > 0 ? '+' : ''}{(holding.gain_loss_percentage || 0).toFixed(1)}%
                   </Typography>
                 </Box>
               </Box>
@@ -211,15 +212,49 @@ export default function StockHoldingsBubbleChart({
     );
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {title}
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: 200 
+          }}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {title}
+          </Typography>
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        {/* <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-          💡 点击气泡查看收益走势，再次点击取消选中
-        </Typography> */}
         
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
           <Tabs 

@@ -22,10 +22,10 @@ CREATE TABLE stock_hist (
     hist_id INT PRIMARY KEY AUTO_INCREMENT,
     ticker_symbol VARCHAR(10) NOT NULL,
     price_date DATE NOT NULL,
-    open_price DECIMAL(12,9),
-    close_price DECIMAL(12,9),
-    high_price DECIMAL(12,9),
-    low_price DECIMAL(12,9),
+    open_price DECIMAL(12,8),
+    close_price DECIMAL(12,8),
+    high_price DECIMAL(12,8),
+    low_price DECIMAL(12,8),
     volume BIGINT DEFAULT 0,
     FOREIGN KEY (ticker_symbol) REFERENCES stock_info(ticker_symbol),
     UNIQUE (ticker_symbol, price_date)
@@ -41,6 +41,20 @@ CREATE TABLE fund_info (
     fund_category VARCHAR(50),
     investment_type VARCHAR(50), 
     size_type VARCHAR(50)
+);
+
+# fund historical information price
+CREATE TABLE fund_hist (
+    hist_id INT PRIMARY KEY AUTO_INCREMENT,
+    fund_symbol VARCHAR(10) NOT NULL,
+    price_date DATE NOT NULL,
+    open_price DECIMAL(12,8),
+    close_price DECIMAL(12,8),
+    high_price DECIMAL(12,8),
+    low_price DECIMAL(12,9),
+    volume BIGINT DEFAULT 0,
+    FOREIGN KEY (fund_symbol) REFERENCES fund_info(fund_symbol),
+    UNIQUE (fund_symbol, price_date)
 );
 
 # basic user information
@@ -185,4 +199,5 @@ END;
 
 DELIMITER ;
 
-
+INSERT INTO user_info (user_name, user_contact, cash_balance)
+VALUES ('Alice Johnson', 'alice.johnson@example.com', 100000.00);

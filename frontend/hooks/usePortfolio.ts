@@ -1,25 +1,28 @@
 // 📁 hooks/usePortfolio.ts
 import { useState, useEffect } from 'react';
 
-// 保持与mock数据相同的类型定义
-interface PortfolioItem {
-  symbol: string;
-  name: string;
+interface PortfolioStock {
+  ticker_symbol: string;
+  company_name: string;
+  short_name: string;
   exchange: string;
-  quantity: number;
-  costBasis: number;
-  avgCost: number;
-  currentPrice: number;
-  marketValue: number;
-  dailyChange: number;
-  dailyChangePercent: number;
-  profitLoss: number;
+  holding_shares: number;
+  total_cost: number;
+  total_profit: number;
+}
+
+interface PortfolioFund {
+  fund_symbol: string;
+  fund_name: string;
+  holding_fund: number;
+  total_cost: number;
+  total_profit: number;
 }
 
 interface PortfolioData {
-  success: boolean;
-  lastUpdated: string;
-  portfolio: PortfolioItem[];
+  cash: number;
+  stocks: PortfolioStock[];
+  funds: PortfolioFund[];
 }
 
 interface UsePortfolioReturn {
@@ -39,24 +42,16 @@ export const usePortfolio = (): UsePortfolioReturn => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/portfolio', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // 添加认证header如果需要
-          // 'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/portfolio');
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to fetch portfolio data');
       }
       
       const portfolioData = await response.json();
       setData(portfolioData);
     } catch (err) {
-      console.error('Portfolio fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load portfolio');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

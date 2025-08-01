@@ -69,7 +69,9 @@ import {
   type UserHolding,
   type PortfolioSummary
 } from '../../mock/marketMockData';
-import { useGlobalPortfolio, type TradingOrder } from '../../contexts/GlobalPortfolioContext';
+import { usePortfolio } from '../../hooks/usePortfolio';
+import { usePortfolioData } from '../../hooks/usePortfolioData';
+import { useTransactionLogs } from '../../hooks/useTransactionLogs';
 import AccountManagement from './AccountManagement';
 
 // Professional interface definitions
@@ -92,12 +94,209 @@ interface MarketTicker {
   isActive: boolean;
 }
 
+interface TradingOrder {
+  id: string;
+  stock: MarketStock;
+  side: 'buy' | 'sell';
+  quantity: number;
+  orderPrice: number;
+  totalValue: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  orderTime: string;
+  executedTime?: string;
+}
+
 export default function TradingPlatform() {
-  // Using global state
-  const { userBalance, userHoldings, portfolioSummary, orders, executeOrder, addCash, withdrawCash } = useGlobalPortfolio();
+  // Using real API data
+  const { data: portfolioData, loading: portfolioLoading, error: portfolioError } = usePortfolio();
+  const { data: gainLossData, loading: gainLossLoading, error: gainLossError } = usePortfolioData();
+  const { data: transactionLogs, loading: transactionLogsLoading, error: transactionLogsError } = useTransactionLogs();
   
   // Core state
   const [watchlist, setWatchlist] = useState<WatchlistStock[]>([]);
+
+  // Transform API data to match expected format
+  const userBalance = useMemo(() => ({
+    cashBalance: portfolioData?.cash || 0,
+    currency: 'USD'
+  }), [portfolioData]);
+
+  const userHoldings = useMemo(() => {
+    if (!portfolioData?.stocks || !gainLossData?.holdings) return [];
+    
+    return portfolioData.stocks.map(stock => {
+      // Find corresponding holding data from gainLossData
+      const holdingData = gainLossData.holdings.find(h => h.ticker_symbol === stock.ticker_symbol);
+      
+      return {
+        stock: {
+          symbol: stock.ticker_symbol,
+          name: stock.company_name || stock.ticker_symbol,
+          exchange: stock.exchange || 'NASDAQ',
+          currentPrice: holdingData?.current_price || 0,
+          dailyChange: holdingData?.total_gain_loss || 0,
+          dailyChangePercent: holdingData?.gain_loss_percentage || 0,
+          marketCap: 0, // Not available in current API
+          volume: 0, // Not available in current API
+          sector: 'Technology' // Default sector
+        },
+        quantity: Number(stock.holding_shares) || 0,
+        averageCost: Number(stock.total_cost) / Number(stock.holding_shares) || 0,
+        purchaseDate: new Date().toISOString().split('T')[0], // Default date
+        currentValue: holdingData?.current_value || 0,
+        totalCost: Number(stock.total_cost) || 0,
+        unrealizedPnL: holdingData?.total_gain_loss || 0,
+        unrealizedPnLPercent: holdingData?.gain_loss_percentage || 0,
+        todayPnL: 0, // Calculate from historical data if needed
+        todayPnLPercent: 0
+      };
+    });
+  }, [portfolioData, gainLossData]);
+
+  const portfolioSummary = useMemo(() => {
+    if (!portfolioData || !gainLossData) {
+      return {
+        totalValue: 0,
+        totalCost: 0,
+        totalUnrealizedPnL: 0,
+        totalUnrealizedPnLPercent: 0,
+        todayTotalPnL: 0,
+        todayTotalPnLPercent: 0,
+        cashBalance: 0,
+        totalAssets: 0,
+        weightedAverageReturn: 0
+      };
+    }
+
+    const totalValue = userHoldings.reduce((sum, h) => sum + h.currentValue, 0);
+    const totalCost = userHoldings.reduce((sum, h) => sum + h.totalCost, 0);
+    const totalUnrealizedPnL = userHoldings.reduce((sum, h) => sum + h.unrealizedPnL, 0);
+    const totalUnrealizedPnLPercent = totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0;
+    const cashBalance = Number(portfolioData.cash) || 0;
+    const totalAssets = totalValue + cashBalance;
+
+    return {
+      totalValue,
+      totalCost,
+      totalUnrealizedPnL,
+      totalUnrealizedPnLPercent,
+      todayTotalPnL: gainLossData.summary?.total_gain_loss || 0,
+      todayTotalPnLPercent: gainLossData.summary?.total_gain_loss_percentage || 0,
+      cashBalance,
+      totalAssets,
+      weightedAverageReturn: totalUnrealizedPnLPercent
+    };
+  }, [portfolioData, gainLossData, userHoldings]);
+
+  // Real trading functions using backend APIs
+  const executeOrder = useCallback(async (stock: MarketStock, side: 'buy' | 'sell', quantity: number) => {
+    try {
+      const endpoint = side === 'buy' ? '/api/portfolio/stock' : '/api/portfolio/stock/sell';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticker_symbol: stock.symbol,
+          price: stock.currentPrice,
+          number_of_shares: quantity
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to execute order');
+      }
+
+      // Note: Orders are now loaded from transaction logs API
+      // The new transaction will appear in the list after the page refreshes
+
+      return true;
+    } catch (error) {
+      console.error(`Error executing ${side} order:`, error);
+      throw error;
+    }
+  }, []);
+
+  const addCash = useCallback(async (amount: number) => {
+    try {
+      const response = await fetch('/api/portfolio/cash/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deposit cash');
+      }
+
+      console.log('Cash deposited successfully');
+    } catch (error) {
+      console.error('Error depositing cash:', error);
+      throw error;
+    }
+  }, []);
+
+  const withdrawCash = useCallback(async (amount: number) => {
+    try {
+      const response = await fetch('/api/portfolio/cash/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to withdraw cash');
+      }
+
+      console.log('Cash withdrawn successfully');
+      return true;
+    } catch (error) {
+      console.error('Error withdrawing cash:', error);
+      throw error;
+    }
+  }, []);
+
+  // Transform transaction logs to TradingOrder format
+  const orders = useMemo(() => {
+    if (!transactionLogs?.transactions) return [];
+    
+    return transactionLogs.transactions.map(transaction => ({
+      id: transaction.transaction_id.toString(),
+      stock: {
+        symbol: transaction.ticker_symbol,
+        name: transaction.company_name,
+        exchange: 'NASDAQ',
+        currentPrice: transaction.price,
+        dailyChange: 0,
+        dailyChangePercent: 0,
+        marketCap: 0,
+        volume: 0,
+        sector: 'Technology'
+      },
+      side: transaction.transaction_type.toLowerCase() as 'buy' | 'sell',
+      quantity: transaction.number_of_shares,
+      orderPrice: transaction.price,
+      totalValue: transaction.total_value,
+      status: 'completed' as const,
+      orderTime: transaction.transaction_time,
+      executedTime: transaction.transaction_time
+    }));
+  }, [transactionLogs]);
+
+  // Loading and error states
+  const isLoading = portfolioLoading || gainLossLoading || transactionLogsLoading;
+  const error = portfolioError || gainLossError || transactionLogsError;
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedStock, setSelectedStock] = useState<MarketStock | null>(null);
   
@@ -183,7 +382,7 @@ export default function TradingPlatform() {
     });
   }, []);
 
-  // 交易执行函数（使用全局状态）
+    // 交易执行函数（使用真实API）
   const handleTrade = useCallback(async (
     stock: MarketStock, 
     side: 'buy' | 'sell', 
@@ -195,14 +394,21 @@ export default function TradingPlatform() {
       const success = await executeOrder(stock, side, quantity);
       
       if (success) {
-        setNotifications(prev => [...prev, `${side === 'buy' ? 'Bought' : 'Sold'} ${stock.symbol} ${quantity} shares successfully`]);
+        // Refresh portfolio data after successful trade
+        // Note: In a real app, you might want to use a refetch function from the hooks
+        window.location.reload(); // Simple refresh for now
+        
+        // Add success notification
+        setNotifications(prev => [...prev, `${side.toUpperCase()} order executed successfully for ${quantity} shares of ${stock.symbol}`]);
+        
+        // Close trade dialog
         setTradeDialogOpen(false);
-      } else {
-        setNotifications(prev => [...prev, 'Trade failed, please try again']);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Trade failed';
-      setNotifications(prev => [...prev, errorMessage]);
+      console.error('Trade execution failed:', error);
+      
+      // Add error notification
+      setNotifications(prev => [...prev, `Trade failed: ${error instanceof Error ? error.message : 'Unknown error'}`]);
     }
   }, [executeOrder]);
 
@@ -219,6 +425,34 @@ export default function TradingPlatform() {
     if (change < 0) return 'error.main';
     return 'text.secondary';
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Box sx={{ p: 2, bgcolor: 'background.default', minHeight: '100vh' }}>
+        <Container maxWidth="lg">
+          <LinearProgress sx={{ mb: 2 }} />
+          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+            Loading trading platform data...
+          </Typography>
+        </Container>
+      </Box>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Box sx={{ p: 2, bgcolor: 'background.default', minHeight: '100vh' }}>
+        <Container maxWidth="lg">
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="h6">Error Loading Data</Typography>
+            <Typography variant="body2">{error}</Typography>
+          </Alert>
+        </Container>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2, bgcolor: 'background.default', minHeight: '100vh' }}>
@@ -309,7 +543,7 @@ export default function TradingPlatform() {
               <Box display="flex" alignItems="center">
                 <SwapHorizIcon sx={{ mr: 1 }} />
                 <Typography variant="subtitle1">
-                  Orders {orders.filter(o => o.status === 'pending').length}
+                  Transactions {orders.length}
                 </Typography>
               </Box>
             </Stack>
@@ -353,7 +587,7 @@ export default function TradingPlatform() {
         <Tabs value={selectedTab} onChange={(e, v) => setSelectedTab(v)}>
           <Tab icon={<TimelineIcon />} label="Market Data" />
           <Tab icon={<StarIcon />} label="Watchlist" />
-          <Tab icon={<SwapHorizIcon />} label="Trading Orders" />
+                          <Tab icon={<SwapHorizIcon />} label="Transaction History" />
           <Tab icon={<AnalyticsIcon />} label="Portfolio Analysis" />
         </Tabs>
       </Box>
@@ -654,14 +888,14 @@ export default function TradingPlatform() {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Trading Orders ({orders.length})
+              Transaction History ({orders.length})
             </Typography>
 
             {orders.length === 0 ? (
               <Box textAlign="center" py={6}>
                 <SwapHorizIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No trading records
+                  No transaction history
                 </Typography>
               </Box>
             ) : (
@@ -700,10 +934,8 @@ export default function TradingPlatform() {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={order.status === 'pending' ? 'Pending' : 
-                                   order.status === 'completed' ? 'Completed' : 'Cancelled'}
-                            color={order.status === 'completed' ? 'success' : 
-                                   order.status === 'pending' ? 'warning' : 'default'}
+                            label="Completed"
+                            color="success"
                             size="small"
                           />
                         </TableCell>

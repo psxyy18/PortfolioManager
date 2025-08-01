@@ -5,10 +5,13 @@ import {
   Card, 
   CardContent, 
   Typography, 
-  Chip
+  Chip,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { useStockHistory } from '../../hooks/useStockHistory';
+import { usePortfolioData } from '../../hooks/usePortfolioData';
 
 interface SingleStockLineChartProps {
   selectedStock: string | null;
@@ -19,33 +22,64 @@ export default function SingleStockLineChart({
   selectedStock, 
   title = "Stock Performance Trend" 
 }: SingleStockLineChartProps) {
-  const { getStockHistoricalData, userHoldings } = useGlobalPortfolio();
+  const { data: portfolioData } = usePortfolioData();
+  const { data: historicalData, loading, error } = useStockHistory(selectedStock);
 
-  // 获取选中股票的信息
+  // Get selected stock info from portfolio data
   const stockInfo = React.useMemo(() => {
-    if (!selectedStock) return null;
-    const holding = userHoldings.find(h => h.stock.symbol === selectedStock);
-    return holding?.stock || null;
-  }, [selectedStock, userHoldings]);
+    if (!selectedStock || !portfolioData?.holdings) return null;
+    const holding = portfolioData.holdings.find((h: any) => h.ticker_symbol === selectedStock);
+    return holding || null;
+  }, [selectedStock, portfolioData]);
 
-  // 获取历史数据
-  const historicalData = React.useMemo(() => {
-    if (!selectedStock) return [];
-    return getStockHistoricalData(selectedStock);
-  }, [selectedStock, getStockHistoricalData]);
-
-  // 计算收益率数据
+  // Calculate return data
   const returnData = React.useMemo(() => {
-    if (!stockInfo || historicalData.length === 0) return [];
+    if (!stockInfo || !historicalData || historicalData.length === 0) return [];
     
-    const holding = userHoldings.find(h => h.stock.symbol === selectedStock);
-    const costBasis = holding?.averageCost || stockInfo.currentPrice;
+    const costBasis = stockInfo.total_cost / stockInfo.holding_shares;
     
-    return historicalData.map(item => ({
+    return historicalData.map((item: any) => ({
       date: new Date(item.date),
       returnPercent: ((item.price - costBasis) / costBasis) * 100
     }));
-  }, [historicalData, stockInfo, userHoldings, selectedStock]);
+  }, [historicalData, stockInfo]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {title}
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: 300
+          }}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {title}
+          </Typography>
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!selectedStock || !stockInfo) {
     return (
@@ -82,7 +116,7 @@ export default function SingleStockLineChart({
             height: 300,
             color: 'text.secondary'
           }}>
-            <Typography>暂无 {stockInfo.symbol} 的历史数据</Typography>
+            <Typography>No historical data available for {stockInfo.ticker_symbol}</Typography>
           </Box>
         </CardContent>
       </Card>
@@ -90,7 +124,7 @@ export default function SingleStockLineChart({
   }
 
   const currentReturn = returnData[returnData.length - 1]?.returnPercent || 0;
-  const holding = userHoldings.find(h => h.stock.symbol === selectedStock);
+  const costBasis = stockInfo.total_cost / stockInfo.holding_shares;
 
   return (
     <Card sx={{ height: '100%' }}>
@@ -101,7 +135,7 @@ export default function SingleStockLineChart({
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Chip 
-              label={stockInfo.symbol}
+              label={stockInfo.ticker_symbol}
               color="primary"
               size="small"
             />
@@ -114,7 +148,7 @@ export default function SingleStockLineChart({
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {stockInfo.name} • Cost Basis: ${holding?.averageCost.toFixed(2) || stockInfo.currentPrice.toFixed(2)}
+          {stockInfo.company_name} • Cost Basis: ${costBasis.toFixed(2)}
         </Typography>
 
         <Box sx={{ width: '100%', height: 300 }}>
@@ -214,7 +248,7 @@ export default function SingleStockLineChart({
             30-Day Return Trend
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Holding: {holding?.quantity || 0} shares
+            Holding: {stockInfo.holding_shares || 0} shares
           </Typography>
         </Box>
       </CardContent>

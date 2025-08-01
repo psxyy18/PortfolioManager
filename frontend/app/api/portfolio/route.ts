@@ -1,43 +1,25 @@
 // 📁 app/api/portfolio/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-// 这里模拟后端API调用，实际使用时替换为真实的后端API
 export async function GET(request: NextRequest) {
   try {
-    // 替换为你的真实后端API地址
-    const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:8080';
-    
-    const response = await fetch(`${BACKEND_API_URL}/api/portfolio`, {
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const response = await fetch(`${backendUrl}/api/portfolio`, {
       headers: {
-        'Authorization': `Bearer ${getAuthToken(request)}`,
         'Content-Type': 'application/json',
       },
-      // 设置超时
-      signal: AbortSignal.timeout(10000),
     });
     
     if (!response.ok) {
-      throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+      throw new Error('Failed to fetch portfolio data from backend');
     }
     
     const data = await response.json();
-    
-    // 确保返回数据格式与mock数据一致
-    return NextResponse.json({
-      success: true,
-      lastUpdated: new Date().toISOString(),
-      portfolio: data.portfolio || data, // 适配不同的后端响应格式
-    });
-    
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Portfolio API error:', error);
-    
+    console.error('Error fetching portfolio data:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to load portfolio data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to load portfolio data' },
       { status: 500 }
     );
   }

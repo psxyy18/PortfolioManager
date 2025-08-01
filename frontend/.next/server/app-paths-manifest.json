@@ -1,0 +1,9 @@
+{
+  "/api/portfolio/route": "app/api/portfolio/route.js",
+  "/api/portfolio/gain-loss/route": "app/api/portfolio/gain-loss/route.js",
+  "/api/portfolio/transactions/route": "app/api/portfolio/transactions/route.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/auth/signin/page": "app/auth/signin/page.js",
+  "/(dashboard)/details/page": "app/(dashboard)/details/page.js",
+  "/(dashboard)/page": "app/(dashboard)/page.js"
+}

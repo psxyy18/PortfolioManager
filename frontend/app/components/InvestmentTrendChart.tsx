@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { usePortfolioChartData } from '../../hooks/usePortfolioGains';
 import {
   Box,
   Card,
@@ -153,6 +154,9 @@ const InvestmentTrendChart: React.FC = () => {
   const [selectedStock, setSelectedStock] = useState<string>(mockStocks[0].symbol);
   const [timeRange, setTimeRange] = useState<'30d' | '60d' | '90d'>('90d');
 
+  // Get real historical data from API
+  const portfolioChartData = usePortfolioChartData();
+
   // 获取当前选中的股票数据
   const currentStock = useMemo(() => 
     mockStocks.find(s => s.symbol === selectedStock) || mockStocks[0], 
@@ -198,11 +202,20 @@ const InvestmentTrendChart: React.FC = () => {
 
   // 准备图表数据
   const chartData = useMemo(() => {
-    const dates = filteredData.prices.map(p => new Date(p.date));
-    const prices = filteredData.prices.map(p => p.price);
-    
-    return { dates, prices };
-  }, [filteredData.prices]);
+    // Use real portfolio data if available, otherwise fall back to mock data
+    if (portfolioChartData.dates.length > 0 && !portfolioChartData.loading) {
+      const dates = portfolioChartData.dates.map(d => new Date(d));
+      const prices = portfolioChartData.holdingGains; // Use holding gains as the main metric
+      
+      return { dates, prices };
+    } else {
+      // Fallback to mock data
+      const dates = filteredData.prices.map(p => new Date(p.date));
+      const prices = filteredData.prices.map(p => p.price);
+      
+      return { dates, prices };
+    }
+  }, [filteredData.prices, portfolioChartData]);
 
   // 渲染投资节点标记
   const renderInvestmentNodes = () => {
@@ -375,9 +388,7 @@ const InvestmentTrendChart: React.FC = () => {
                 data: chartData.dates,
                 scaleType: 'time',
                 valueFormatter: (date: Date) => {
-                  // return `${date.getMonth() + 1}/${date.getDate()}`;
-                    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
-
+                  return `${date.getMonth() + 1}/${date.getDate()}`;
                 },
               },
             ]}
@@ -392,7 +403,7 @@ const InvestmentTrendChart: React.FC = () => {
             ]}
             yAxis={[
               {
-                valueFormatter: (value) => `$${value.toFixed(2)}`,
+                valueFormatter: (value: number) => `$${value.toFixed(2)}`,
               },
             ]}
             grid={{ horizontal: true, vertical: true }}

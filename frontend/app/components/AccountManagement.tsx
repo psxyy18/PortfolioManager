@@ -24,7 +24,7 @@ import {
   Remove as RemoveIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { usePortfolio } from '../../hooks/usePortfolio';
 
 interface AccountManagementProps {
   showTitle?: boolean;
@@ -35,20 +35,96 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
   showTitle = true,
   compact = false 
 }) => {
-  const {
-    userBalance,
-    portfolioSummary,
-    addCash,
-    withdrawCash,
-    refreshPortfolio,
-    isLoading,
-    error
-  } = useGlobalPortfolio();
+  const { data: portfolioData, loading: isLoading, error } = usePortfolio();
+  
+  // Transform API data to match expected format
+  const userBalance = {
+    cashBalance: portfolioData?.cash || 0,
+    currency: 'USD'
+  };
+
+  const portfolioSummary = {
+    totalValue: portfolioData?.stocks?.reduce((sum, stock) => sum + Number(stock.total_cost || 0), 0) || 0,
+    totalCost: portfolioData?.stocks?.reduce((sum, stock) => sum + Number(stock.total_cost || 0), 0) || 0,
+    totalUnrealizedPnL: portfolioData?.stocks?.reduce((sum, stock) => sum + Number(stock.total_profit || 0), 0) || 0,
+    totalUnrealizedPnLPercent: 0,
+    todayTotalPnL: 0,
+    todayTotalPnLPercent: 0,
+    cashBalance: portfolioData?.cash || 0,
+    totalAssets: (portfolioData?.cash || 0) + (portfolioData?.stocks?.reduce((sum, stock) => sum + Number(stock.total_cost || 0), 0) || 0),
+    weightedAverageReturn: 0
+  };
 
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Real API functions for cash operations
+  const addCash = async (amount: number) => {
+    try {
+      setIsProcessing(true);
+      setActionError(null);
+      
+      const response = await fetch('/api/portfolio/cash/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deposit cash');
+      }
+
+      // Refresh the page to update the data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error depositing cash:', error);
+      setActionError(error instanceof Error ? error.message : 'Failed to deposit cash');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const withdrawCash = async (amount: number): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      setActionError(null);
+      
+      const response = await fetch('/api/portfolio/cash/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to withdraw cash');
+      }
+
+      // Refresh the page to update the data
+      window.location.reload();
+      return true;
+    } catch (error) {
+      console.error('Error withdrawing cash:', error);
+      setActionError(error instanceof Error ? error.message : 'Failed to withdraw cash');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const refreshPortfolio = async () => {
+    window.location.reload();
+  };
 
   // 格式化货币
   const formatCurrency = (value: number) => {
@@ -60,34 +136,32 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
   };
 
   // 处理存款
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     const depositAmount = parseFloat(amount);
     if (isNaN(depositAmount) || depositAmount <= 0) {
       setActionError('请输入有效的金额');
       return;
     }
 
-    addCash(depositAmount);
+    await addCash(depositAmount);
     setDepositDialogOpen(false);
     setAmount('');
     setActionError(null);
   };
 
   // 处理提现
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const withdrawAmount = parseFloat(amount);
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
       setActionError('请输入有效的金额');
       return;
     }
 
-    const success = withdrawCash(withdrawAmount);
+    const success = await withdrawCash(withdrawAmount);
     if (success) {
       setWithdrawDialogOpen(false);
       setAmount('');
       setActionError(null);
-    } else {
-      setActionError('余额不足');
     }
   };
 
@@ -132,7 +206,7 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
     color="primary" 
     size="small"
     onClick={refreshPortfolio}
-    disabled={isLoading}
+    disabled={isLoading || isProcessing}
   >
     <RefreshIcon />
   </IconButton>
@@ -193,9 +267,9 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
             onClick={handleDeposit}
             variant="contained"
             color="success"
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!amount || parseFloat(amount) <= 0 || isProcessing}
           >
-            Confirm Deposit
+            {isProcessing ? 'Processing...' : 'Confirm Deposit'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -260,9 +334,9 @@ const AccountManagement: React.FC<AccountManagementProps> = ({
             onClick={handleWithdraw}
             variant="contained"
             color="error"
-            disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > userBalance.cashBalance}
+            disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > userBalance.cashBalance || isProcessing}
           >
-            Confirm Withdrawal
+            {isProcessing ? 'Processing...' : 'Confirm Withdrawal'}
           </Button>
         </DialogActions>
       </Dialog>

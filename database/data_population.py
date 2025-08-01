@@ -4,12 +4,14 @@ import mysql.connector
 # Load CSV
 df_stock = pd.read_csv('stock_data.csv')  
 df_fund = pd.read_csv('funds_data.csv')
+df_stock_hist = pd.read_csv('stock_hist.csv')
+df_fund_hist = pd.read_csv('fund_hist.csv')
 
 # Connect to MySQL
 conn = mysql.connector.connect(
     host='localhost',
     user='root',
-    password='001201kattyA',
+    password='gerahw235grea',
     database='financial_db'
 )
 cursor = conn.cursor()
@@ -39,9 +41,10 @@ for _, row in df_stock.iterrows():
                 sector = VALUES(sector),
                 market_cap = VALUES(market_cap)
         """, (ticker, company_name, short_name, exchange, industry, sector, market_cap))
-
+        
     except Exception as e:
         print(f"❌ Error inserting {row['ticker']}: {e}")
+print(f"✅ Inserted stock_info successfully")
 
 ##################################################
 # FUND
@@ -69,6 +72,66 @@ for _, row in df_fund.iterrows():
 
     except Exception as e:
         print(f"Error inserting fund {row['fund_symbol']}: {e}")
+print(f"✅ Inserted fund_info successfully")
+
+# ##################################################
+# # Insert historical stock data
+# ##################################################
+# for _, row in df_stock_hist.iterrows():
+#     try:
+#         ticker_symbol = row['ticker_symbol']
+#         price_date = row['price_date']  # should be in 'YYYY-MM-DD' format
+#         open_price = row.get('open_price', None)
+#         close_price = row.get('close_price', None)
+#         high_price = row.get('high_price', None)
+#         low_price = row.get('low_price', None)
+#         volume = row.get('volume', 0)
+
+#         cursor.execute("""
+#             INSERT INTO stock_hist (
+#                 ticker_symbol, price_date, open_price, close_price, high_price, low_price, volume
+#             ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+#             ON DUPLICATE KEY UPDATE
+#                 open_price = VALUES(open_price),
+#                 close_price = VALUES(close_price),
+#                 high_price = VALUES(high_price),
+#                 low_price = VALUES(low_price),
+#                 volume = VALUES(volume)
+#         """, (ticker_symbol, price_date, open_price, close_price, high_price, low_price, volume))
+
+#     except Exception as e:
+#         print(f"Error inserting row for {row['ticker']} on {row['price_date']}: {e}")
+# print(f"✅ Inserted stock_hist successfully")       
+
+
+# ##################################################
+# # Insert historical fund data
+# ##################################################
+# for _, row in df_fund_hist.iterrows():
+#     try:
+#         fund_symbol = row['fund_symbol']
+#         price_date = row['price_date']  # should be in 'YYYY-MM-DD' format
+#         open_price = row.get('open_price', None)
+#         close_price = row.get('close_price', None)
+#         high_price = row.get('high_price', None)
+#         low_price = row.get('low_price', None)
+#         volume = row.get('volume', 0)
+
+#         cursor.execute("""
+#             INSERT INTO fund_hist (
+#                 fund_symbol, price_date, open_price, close_price, high_price, low_price, volume
+#             ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+#             ON DUPLICATE KEY UPDATE
+#                 open_price = VALUES(open_price),
+#                 close_price = VALUES(close_price),
+#                 high_price = VALUES(high_price),
+#                 low_price = VALUES(low_price),
+#                 volume = VALUES(volume)
+#         """, (fund_symbol, price_date, open_price, close_price, high_price, low_price, volume))
+
+#     except Exception as e:
+#         print(f"Error inserting row for {row['ticker']} on {row['price_date']}: {e}")
+# print(f"✅ Inserted fund_hist successfully")  
 
 
 # Commit & close

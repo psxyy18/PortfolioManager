@@ -14,24 +14,66 @@ import StatCard, { StatCardProps } from '../components/StatCard';
 import PortfolioBubbleChart from '../components/PortfolioBubbleChart';
 import SingleStockLineChart from '../components/SingleStockLineChart';
 import RevenueCalendarHeatmap from '../components/RevenueCalendarHeatmap';
-import { useGlobalPortfolio } from '../../contexts/GlobalPortfolioContext';
+import { usePortfolio } from '../../hooks/usePortfolio';
+import { usePortfolioGains, usePortfolioChartData } from '../../hooks/usePortfolioGains';
+import { usePortfolioData } from '../../hooks/usePortfolioData';
 import { calculatePortfolioStats } from '../../data/portfolioData';
 
 export default function DashboardContent() {
-  // 使用全局状态
+  // 使用真实API数据
   const { 
-    userBalance, 
-    portfolioSummary, 
-    userHoldings,
-    isLoading,
-    error 
-  } = useGlobalPortfolio();
+    data: portfolioData, 
+    loading: portfolioLoading, 
+    error: portfolioError 
+  } = usePortfolio();
   
-  // 获取真实CSV数据
-  const csvStats = calculatePortfolioStats();
+  // 获取真实增益数据
+  const gains = usePortfolioGains();
+  const chartData = usePortfolioChartData();
+  const { data: gainLossData } = usePortfolioData();
   
   // 管理选中的股票状态
   const [selectedStock, setSelectedStock] = React.useState<string | null>(null);
+
+  // Calculate portfolio summary from real data
+  const portfolioSummary = React.useMemo(() => {
+    if (!portfolioData) {
+      return {
+        totalAssets: 0,
+        totalValue: 0,
+        totalUnrealizedPnL: 0,
+        totalUnrealizedPnLPercent: 0,
+        cashBalance: 0
+      };
+    }
+
+    // Convert string values to numbers
+    const cashBalance = Number(portfolioData.cash) || 0;
+    
+    // Calculate total value using current market values from gainLossData
+    let totalValue = 0;
+    let totalUnrealizedPnL = 0;
+    
+    if (gainLossData?.holdings) {
+      totalValue = gainLossData.holdings.reduce((sum, holding) => sum + Number(holding.current_value || 0), 0);
+      totalUnrealizedPnL = gainLossData.holdings.reduce((sum, holding) => sum + Number(holding.total_gain_loss || 0), 0);
+    } else {
+      // Fallback to portfolio data if gainLossData is not available
+      totalValue = portfolioData.stocks.reduce((sum, stock) => sum + Number(stock.total_cost || 0), 0);
+      totalUnrealizedPnL = portfolioData.stocks.reduce((sum, stock) => sum + Number(stock.total_profit || 0), 0);
+    }
+    
+    const totalAssets = cashBalance + totalValue;
+    const totalUnrealizedPnLPercent = totalValue > 0 ? (totalUnrealizedPnL / totalValue) * 100 : 0;
+
+    return {
+      totalAssets,
+      totalValue,
+      totalUnrealizedPnL,
+      totalUnrealizedPnLPercent,
+      cashBalance
+    };
+  }, [portfolioData]);
 
   // 格式化货币
   const formatCurrency = (value: number) => {
@@ -46,29 +88,29 @@ export default function DashboardContent() {
   const data: StatCardProps[] = React.useMemo(() => [
     {
       title: 'Today\'s Gain',
-      value: `${csvStats.dailyGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.dailyGain))}`,
+      value: `${gains.todayGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(gains.todayGain))}`,
       interval: '',
-      trend: csvStats.dailyGain >= 0 ? 'up' : 'down',
-      trendValue: `${csvStats.dailyGainPercent >= 0 ? '+' : ''}${csvStats.dailyGainPercent.toFixed(2)}%`,
+      trend: gains.todayGain >= 0 ? 'up' : 'down',
+      trendValue: `${gains.todayGainPercent >= 0 ? '+' : ''}${gains.todayGainPercent.toFixed(2)}%`,
       data: [], // 取消折线图
     },
     {
       title: 'Holding Gain (30 Days)',
-      value: `${csvStats.holdingGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.holdingGain))}`,
+      value: `${gains.holdingGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(gains.holdingGain))}`,
       interval: '',
-      trend: csvStats.holdingGainPercent >= 0 ? 'up' : 'down',
-      trendValue: `${csvStats.holdingGainPercent >= 0 ? '+' : ''}${csvStats.holdingGainPercent.toFixed(2)}%`,
-      data: csvStats.holdingGainData.map(item => Math.round(item.value * 100) / 100), // 确保数据为两位小数
+      trend: gains.holdingGainPercent >= 0 ? 'up' : 'down',
+      trendValue: `${gains.holdingGainPercent >= 0 ? '+' : ''}${gains.holdingGainPercent.toFixed(2)}%`,
+      data: chartData.holdingGains,
     },
     {
       title: 'Cumulative Gain (30 Days)',
-      value: `${csvStats.cumulativeGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(csvStats.cumulativeGain))}`,
+      value: `${gains.cumulativeGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(gains.cumulativeGain))}`,
       interval: '',
-      trend: csvStats.cumulativeGain >= 0 ? 'up' : 'down',
-      trendValue: `${csvStats.cumulativeGainPercent >= 0 ? '+' : ''}${csvStats.cumulativeGainPercent.toFixed(2)}%`,
-      data: csvStats.cumulativeGainData.map(item => item.value),
+      trend: gains.cumulativeGain >= 0 ? 'up' : 'down',
+      trendValue: `${gains.cumulativeGainPercent >= 0 ? '+' : ''}${gains.cumulativeGainPercent.toFixed(2)}%`,
+      data: chartData.cumulativeGains,
     },
-  ], [portfolioSummary, formatCurrency]);
+  ], [gains, chartData, formatCurrency]);
 
   // 处理气泡图中股票的点击事件
   const handleStockSelect = (symbol: string | null) => {
@@ -134,10 +176,10 @@ export default function DashboardContent() {
                       Cash
                     </Typography>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'medium' }}>
-                      {formatCurrency(userBalance.cashBalance)}
+                      {formatCurrency(portfolioSummary.cashBalance)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {((userBalance.cashBalance / (userBalance.cashBalance + portfolioSummary.totalValue)) * 100).toFixed(1)}% Cash Allocation Percentage
+                      {((portfolioSummary.cashBalance / (portfolioSummary.cashBalance + portfolioSummary.totalValue)) * 100).toFixed(1)}% Cash Allocation Percentage
                     </Typography>
                   </Box>
                 </Box>

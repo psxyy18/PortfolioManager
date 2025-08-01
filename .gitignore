@@ -1,6 +1,6 @@
-node_modules/
-.env
-companies.csv
-stock_data.csv
+*.csv
 .DS_Store
-test.js
+.env
+.env.local
+backend/node_modules
+frontend/node_modules
